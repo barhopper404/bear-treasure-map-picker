@@ -118,6 +118,7 @@
           const [draftTimer, setDraftTimer] = useState(60);
           const [hasJoined, setHasJoined] = useState(false);
           const [isAutoPicking, setIsAutoPicking] = useState(false);
+          const [justDrafted, setJustDrafted] = useState(null);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -152,38 +153,60 @@
                   const response = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
                   const result = await response.json();
                   if (result.success && result.eventData) {
-                    setEventData(result.eventData);
+                    // Only update if data actually changed
+                    const currentDataStr = JSON.stringify(eventData);
+                    const newDataStr = JSON.stringify(result.eventData);
                     
-                    // Sync draft state
-                    if (result.eventData.started && result.eventData.captains) {
-                      setCaptains(result.eventData.captains);
-                      setPickingCaptain(result.eventData.currentPicker || 0);
-                      setAvailablePlayers(result.eventData.availablePlayers || []);
-                      setTeams(result.eventData.teams || { captain1: [], captain2: [] });
+                    if (currentDataStr !== newDataStr) {
+                      setEventData(result.eventData);
                       
-                      // Auto-transition views based on event state
-                      if (view === 'lobby' && result.eventData.started) {
-                        setView('captainChoice');
-                      }
-                      if (view === 'captainChoice' && result.eventData.deferredFirstPick !== undefined) {
-                        setFirstPickerDeferred(result.eventData.deferredFirstPick);
-                        if (result.eventData.deferredFirstPick || result.eventData.teams.captain1.length > 0 || result.eventData.teams.captain2.length > 0) {
-                          setView('teamPicking');
+                      // Sync draft state
+                      if (result.eventData.started && result.eventData.captains) {
+                        setCaptains(result.eventData.captains);
+                        
+                        // Only update picker if it changed
+                        if (result.eventData.currentPicker !== pickingCaptain) {
+                          setPickingCaptain(result.eventData.currentPicker || 0);
                         }
-                      }
-                      if (result.eventData.completed) {
-                        setView('complete');
+                        
+                        // Only update teams if they changed
+                        const currentTeamsStr = JSON.stringify(teams);
+                        const newTeamsStr = JSON.stringify(result.eventData.teams);
+                        if (currentTeamsStr !== newTeamsStr && result.eventData.teams) {
+                          setTeams(result.eventData.teams);
+                        }
+                        
+                        // Only update available players if they changed
+                        const currentAvailableStr = JSON.stringify(availablePlayers);
+                        const newAvailableStr = JSON.stringify(result.eventData.availablePlayers);
+                        if (currentAvailableStr !== newAvailableStr && result.eventData.availablePlayers) {
+                          setAvailablePlayers(result.eventData.availablePlayers);
+                        }
+                        
+                        // Auto-transition views based on event state
+                        if (view === 'lobby' && result.eventData.started) {
+                          setView('captainChoice');
+                        }
+                        if (view === 'captainChoice' && result.eventData.deferredFirstPick !== undefined) {
+                          setFirstPickerDeferred(result.eventData.deferredFirstPick);
+                          if (result.eventData.deferredFirstPick || (result.eventData.teams && (result.eventData.teams.captain1.length > 0 || result.eventData.teams.captain2.length > 0))) {
+                            setView('teamPicking');
+                          }
+                        }
+                        if (result.eventData.completed) {
+                          setView('complete');
+                        }
                       }
                     }
                   }
                 } catch (err) {
                   console.error('Error polling for updates:', err);
                 }
-              }, 2000); // Poll every 2 seconds
+              }, 3000); // Poll every 3 seconds (increased from 2 to reduce load)
               
               return () => clearInterval(interval);
             }
-          }, [view, eventId]);
+          }, [view, eventId, eventData, teams, availablePlayers, pickingCaptain]);
 
           const generateEventId = () => {
             return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -497,7 +520,7 @@
             if (view === 'teamPicking' && !isAutoPicking) {
               setDraftTimer(60);
             }
-          }, [pickingCaptain, view]);
+          }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length]); // Reset when any team changes
 
           const pickPlayer = async (player) => {
             const teamKey = pickingCaptain === 0 ? 'captain1' : 'captain2';
@@ -509,10 +532,21 @@
             
             const newAvailablePlayers = availablePlayers.filter(p => p.name !== player.name);
             
+            // Update local state immediately for smooth UI
             setTeams(newTeams);
             setAvailablePlayers(newAvailablePlayers);
+            setDraftTimer(60); // Reset timer immediately
             
-            // Update Google Sheets
+            // Play draft sound
+            try {
+              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
+              audio.volume = 0.3;
+              audio.play().catch(e => console.log('Audio play failed:', e));
+            } catch (e) {
+              console.log('Audio creation failed:', e);
+            }
+            
+            // Update Google Sheets in background
             const updatedEventData = {
               ...eventData,
               teams: newTeams,
@@ -528,6 +562,7 @@
               });
 
               await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              setEventData(updatedEventData);
             } catch (err) {
               console.error('Error updating teams:', err);
             }
@@ -542,6 +577,15 @@
               
               setTeams(finalTeams);
               setAvailablePlayers([]);
+              
+              // Play final sound
+              try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
+                audio.volume = 0.5;
+                audio.play().catch(e => console.log('Audio play failed:', e));
+              } catch (e) {
+                console.log('Audio creation failed:', e);
+              }
               
               // Update Google Sheets with final teams
               const finalEventData = {
