@@ -117,6 +117,7 @@
           const [captainChoiceTimer, setCaptainChoiceTimer] = useState(45);
           const [draftTimer, setDraftTimer] = useState(60);
           const [hasJoined, setHasJoined] = useState(false);
+          const [isAutoPicking, setIsAutoPicking] = useState(false);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -458,10 +459,12 @@
           };
 
           const handleDraftTimeout = async () => {
-            if (availablePlayers.length > 0) {
+            if (availablePlayers.length > 0 && !isAutoPicking) {
+              setIsAutoPicking(true);
               // Auto-pick random player
               const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
               await pickPlayer(randomPlayer);
+              setTimeout(() => setIsAutoPicking(false), 1000);
             }
           };
 
@@ -479,22 +482,22 @@
 
           // Draft timer
           useEffect(() => {
-            if (view === 'teamPicking' && availablePlayers.length > 0 && draftTimer > 0) {
+            if (view === 'teamPicking' && availablePlayers.length > 0 && draftTimer > 0 && !isAutoPicking) {
               const timer = setTimeout(() => {
                 setDraftTimer(prev => prev - 1);
               }, 1000);
               return () => clearTimeout(timer);
-            } else if (view === 'teamPicking' && draftTimer === 0 && availablePlayers.length > 0) {
+            } else if (view === 'teamPicking' && draftTimer === 0 && availablePlayers.length > 0 && !isAutoPicking) {
               handleDraftTimeout();
             }
-          }, [view, draftTimer, availablePlayers]);
+          }, [view, draftTimer, availablePlayers, isAutoPicking]);
 
           // Reset draft timer when picker changes
           useEffect(() => {
-            if (view === 'teamPicking') {
+            if (view === 'teamPicking' && !isAutoPicking) {
               setDraftTimer(60);
             }
-          }, [pickingCaptain]);
+          }, [pickingCaptain, view]);
 
           const pickPlayer = async (player) => {
             const teamKey = pickingCaptain === 0 ? 'captain1' : 'captain2';
@@ -904,10 +907,15 @@
                         ))}
                       </div>
                     </div>
-                    {isMarshall && (
+                    {isMarshall && !eventData?.started && (
                       <button onClick={startEvent} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
                         Start Event
                       </button>
+                    )}
+                    {eventData?.started && (
+                      <div className="bg-gray-900/60 p-4 rounded border-2 border-gray-500 text-center">
+                        <p className="text-gray-300 text-lg">Event has started! Selecting captains...</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1004,10 +1012,16 @@
                     
                     {availablePlayers.length > 0 && (
                       <div className="text-center mb-4">
-                        <div className="inline-block bg-yellow-600 px-6 py-3 rounded-lg">
+                        <div className={`inline-block px-6 py-3 rounded-lg ${draftTimer <= 10 ? 'bg-red-600 animate-pulse' : 'bg-yellow-600'}`}>
                           <span className="text-white text-2xl font-bold">{draftTimer}s</span>
-                          <span className="text-yellow-200 ml-2">to pick</span>
+                          <span className={`ml-2 ${draftTimer <= 10 ? 'text-red-200' : 'text-yellow-200'}`}>to pick</span>
                         </div>
+                      </div>
+                    )}
+                    
+                    {isAutoPicking && (
+                      <div className="bg-red-600/80 p-4 rounded border-2 border-red-400 mb-6 text-center">
+                        <p className="text-white text-xl font-bold">⏰ Time's up! Auto-picking random player...</p>
                       </div>
                     )}
                     
