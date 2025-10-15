@@ -13,7 +13,10 @@
     <div id="root"></div>
     
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
+        
+        // IMPORTANT: Replace this with your Google Apps Script Web App URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec';
         
         // Lucide React icons as simple SVG components
         const Users = (props) => (
@@ -66,6 +69,15 @@
             </svg>
         );
 
+        const RefreshCw = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M21 2v6h-6"/>
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+                <path d="M3 22v-6h6"/>
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            </svg>
+        );
+
         function TreasureMapTeamPicker() {
           const [view, setView] = useState('home');
           const [eventId, setEventId] = useState('');
@@ -80,43 +92,99 @@
           const [pickingCaptain, setPickingCaptain] = useState(0);
           const [teams, setTeams] = useState({ captain1: [], captain2: [] });
           const [availablePlayers, setAvailablePlayers] = useState([]);
+          const [loading, setLoading] = useState(false);
+          const [error, setError] = useState('');
+
+          // Check for event ID in URL on load
+          useEffect(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventParam = urlParams.get('event');
+            if (eventParam) {
+              setEventId(eventParam);
+              setView('join');
+            }
+          }, []);
+
+          // Poll for updates when in lobby
+          useEffect(() => {
+            if (view === 'lobby' && eventId && SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+              const interval = setInterval(async () => {
+                try {
+                  const response = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
+                  const result = await response.json();
+                  if (result.success) {
+                    setEventData(result.eventData);
+                  }
+                } catch (err) {
+                  console.error('Error polling for updates:', err);
+                }
+              }, 3000); // Poll every 3 seconds
+              
+              return () => clearInterval(interval);
+            }
+          }, [view, eventId]);
 
           const generateEventId = () => {
             return Math.random().toString(36).substring(2, 8).toUpperCase();
           };
 
-          const createEvent = () => {
+          const createEvent = async () => {
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+              setError('Please configure your Google Apps Script URL in the HTML file!');
+              return;
+            }
+
+            setLoading(true);
+            setError('');
+            
             const newEventId = generateEventId();
-            const newEvent = {
-              id: newEventId,
-              marshall: characterName,
-              participants: [{
-                name: characterName,
-                wantsCaptain: false,
-                lockpicker: false,
-                healer: false,
-                bard: false,
-                isMarshall: true
-              }],
-              started: false
+            const participant = {
+              name: characterName,
+              wantsCaptain: false,
+              lockpicker: false,
+              healer: false,
+              bard: false,
+              isMarshall: true
             };
-            setEventId(newEventId);
-            setEventData(newEvent);
-            setView('lobby');
+
+            try {
+              const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                  action: 'createEvent',
+                  eventId: newEventId,
+                  marshall: characterName,
+                  participants: [participant]
+                })
+              });
+
+              const result = await response.json();
+              
+              if (result.success) {
+                setEventId(newEventId);
+                setEventData(result.eventData);
+                setView('lobby');
+              } else {
+                setError('Failed to create event: ' + result.error);
+              }
+            } catch (err) {
+              setError('Error creating event. Please try again.');
+              console.error(err);
+            } finally {
+              setLoading(false);
+            }
           };
 
-          const joinEvent = () => {
-            if (!eventData) {
-              const mockEvent = {
-                id: eventId,
-                marshall: 'EventMarshall',
-                participants: [],
-                started: false
-              };
-              setEventData(mockEvent);
+          const joinEvent = async () => {
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+              setError('Please configure your Google Apps Script URL in the HTML file!');
+              return;
             }
-            
-            const newParticipant = {
+
+            setLoading(true);
+            setError('');
+
+            const participant = {
               name: characterName,
               wantsCaptain,
               lockpicker: isLockpicker,
@@ -124,13 +192,31 @@
               bard: isBard,
               isMarshall: false
             };
-            
-            setEventData(prev => ({
-              ...prev,
-              participants: [...prev.participants, newParticipant]
-            }));
-            
-            setView('lobby');
+
+            try {
+              const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                  action: 'addParticipant',
+                  eventId: eventId,
+                  participant: participant
+                })
+              });
+
+              const result = await response.json();
+              
+              if (result.success) {
+                setEventData(result.eventData);
+                setView('lobby');
+              } else {
+                setError('Failed to join event: ' + result.error);
+              }
+            } catch (err) {
+              setError('Error joining event. Please check the Event ID and try again.');
+              console.error(err);
+            } finally {
+              setLoading(false);
+            }
           };
 
           const copyEventLink = () => {
@@ -210,6 +296,12 @@
                       <h2 className="text-2xl text-orange-300">Treasure Map Team Picker</h2>
                     </div>
                     
+                    {error && (
+                      <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
+                        {error}
+                      </div>
+                    )}
+                    
                     <div className="space-y-4">
                       <button onClick={() => setView('create')} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
                         Create New Event
@@ -230,16 +322,23 @@
                 <div className="max-w-2xl mx-auto">
                   <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
                     <h2 className="text-3xl font-bold text-amber-400 mb-6">Create Event</h2>
+                    
+                    {error && (
+                      <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
+                        {error}
+                      </div>
+                    )}
+                    
                     <div className="space-y-4">
                       <div>
                         <label className="block text-orange-300 mb-2">Your Character Name</label>
                         <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full px-4 py-2 bg-black/60 border border-amber-600 rounded text-white" placeholder="Enter your name" />
                       </div>
                       <div className="flex gap-4">
-                        <button onClick={() => { if (characterName.trim()) createEvent(); }} disabled={!characterName.trim()} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                          Create Event
+                        <button onClick={createEvent} disabled={!characterName.trim() || loading} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                          {loading ? 'Creating...' : 'Create Event'}
                         </button>
-                        <button onClick={() => setView('home')} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        <button onClick={() => setView('home')} disabled={loading} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
                           Cancel
                         </button>
                       </div>
@@ -256,6 +355,13 @@
                 <div className="max-w-2xl mx-auto">
                   <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
                     <h2 className="text-3xl font-bold text-amber-400 mb-6">Join Event</h2>
+                    
+                    {error && (
+                      <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
+                        {error}
+                      </div>
+                    )}
+                    
                     <div className="space-y-4">
                       <div>
                         <label className="block text-orange-300 mb-2">Event ID</label>
@@ -288,10 +394,10 @@
                         </label>
                       </div>
                       <div className="flex gap-4">
-                        <button onClick={() => { if (characterName.trim() && eventId.trim()) joinEvent(); }} disabled={!characterName.trim() || !eventId.trim()} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                          Join Event
+                        <button onClick={joinEvent} disabled={!characterName.trim() || !eventId.trim() || loading} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                          {loading ? 'Joining...' : 'Join Event'}
                         </button>
-                        <button onClick={() => setView('home')} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        <button onClick={() => setView('home')} disabled={loading} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
                           Cancel
                         </button>
                       </div>
@@ -303,7 +409,8 @@
           }
 
           if (view === 'lobby') {
-            const isMarshall = eventData.participants[0]?.name === characterName;
+            const isMarshall = eventData?.participants?.[0]?.name === characterName;
+            
             return (
               <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
                 <div className="max-w-4xl mx-auto">
@@ -321,10 +428,10 @@
                     <div className="mb-6">
                       <h3 className="text-xl text-orange-300 mb-4 flex items-center gap-2">
                         <Users className="w-6 h-6" />
-                        Participants ({eventData.participants.length})
+                        Participants ({eventData?.participants?.length || 0})
                       </h3>
                       <div className="space-y-2">
-                        {eventData.participants.map((p, idx) => (
+                        {eventData?.participants?.map((p, idx) => (
                           <div key={idx} className="bg-black/60 p-4 rounded border border-amber-600 flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <span className="text-white font-bold">{p.name}</span>
@@ -357,7 +464,7 @@
                       <div className="bg-blue-900/60 p-4 rounded border-2 border-blue-500">
                         <h3 className="text-xl text-blue-300 mb-3 flex items-center gap-2">
                           <Shield className="w-5 h-5" />
-                          Team 1: {captains[0].name}
+                          Team 1: {captains[0]?.name}
                         </h3>
                         <div className="space-y-2">
                           {teams.captain1.map((p, idx) => (
@@ -384,14 +491,14 @@
                         )}
                         {availablePlayers.length > 0 && (
                           <div className="mt-4 text-center text-green-400 font-bold">
-                            {captains[pickingCaptain].name}'s turn to pick
+                            {captains[pickingCaptain]?.name}'s turn to pick
                           </div>
                         )}
                       </div>
                       <div className="bg-red-900/60 p-4 rounded border-2 border-red-500">
                         <h3 className="text-xl text-red-300 mb-3 flex items-center gap-2">
                           <Shield className="w-5 h-5" />
-                          Team 2: {captains[1].name}
+                          Team 2: {captains[1]?.name}
                         </h3>
                         <div className="space-y-2">
                           {teams.captain2.map((p, idx) => (
@@ -419,11 +526,11 @@
                       <div className="bg-blue-900/60 p-6 rounded border-2 border-blue-500">
                         <h3 className="text-2xl text-blue-300 mb-4 flex items-center gap-2">
                           <Shield className="w-6 h-6" />
-                          Team 1: {captains[0].name}
+                          Team 1: {captains[0]?.name}
                         </h3>
                         <div className="space-y-2">
                           <div className="bg-blue-800/60 p-3 rounded text-white font-bold">
-                            {captains[0].name} (Captain)
+                            {captains[0]?.name} (Captain)
                           </div>
                           {teams.captain1.map((p, idx) => (
                             <div key={idx} className="bg-black/60 p-3 rounded text-white flex justify-between items-center">
@@ -436,11 +543,11 @@
                       <div className="bg-red-900/60 p-6 rounded border-2 border-red-500">
                         <h3 className="text-2xl text-red-300 mb-4 flex items-center gap-2">
                           <Shield className="w-6 h-6" />
-                          Team 2: {captains[1].name}
+                          Team 2: {captains[1]?.name}
                         </h3>
                         <div className="space-y-2">
                           <div className="bg-red-800/60 p-3 rounded text-white font-bold">
-                            {captains[1].name} (Captain)
+                            {captains[1]?.name} (Captain)
                           </div>
                           {teams.captain2.map((p, idx) => (
                             <div key={idx} className="bg-black/60 p-3 rounded text-white flex justify-between items-center">
