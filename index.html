@@ -78,6 +78,13 @@
             </svg>
         );
 
+        const Edit = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+        );
+
         function TreasureMapTeamPicker() {
           const [view, setView] = useState('home');
           const [eventId, setEventId] = useState('');
@@ -94,6 +101,7 @@
           const [availablePlayers, setAvailablePlayers] = useState([]);
           const [loading, setLoading] = useState(false);
           const [error, setError] = useState('');
+          const [editingPlayer, setEditingPlayer] = useState(null);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -140,10 +148,10 @@
             const newEventId = generateEventId();
             const participant = {
               name: characterName,
-              wantsCaptain: false,
-              lockpicker: false,
-              healer: false,
-              bard: false,
+              wantsCaptain: wantsCaptain,
+              lockpicker: isLockpicker,
+              healer: isHealer,
+              bard: isBard,
               isMarshall: true
             };
 
@@ -288,6 +296,45 @@
             }
           };
 
+          const updatePlayerRoles = async (playerIndex, updates) => {
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+              setError('Please configure your Google Apps Script URL in the HTML file!');
+              return;
+            }
+
+            setLoading(true);
+            setError('');
+
+            try {
+              const updatedEventData = { ...eventData };
+              updatedEventData.participants[playerIndex] = {
+                ...updatedEventData.participants[playerIndex],
+                ...updates
+              };
+
+              const params = new URLSearchParams({
+                action: 'updateEvent',
+                eventId: eventId,
+                eventData: JSON.stringify(updatedEventData)
+              });
+
+              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              const result = await response.json();
+
+              if (result.success) {
+                setEventData(result.eventData);
+                setEditingPlayer(null);
+              } else {
+                setError('Failed to update player: ' + result.error);
+              }
+            } catch (err) {
+              setError('Error updating player: ' + err.message);
+              console.error('Update player error:', err);
+            } finally {
+              setLoading(false);
+            }
+          };
+
           const getRoleIcons = (participant) => {
             const icons = [];
             if (participant.lockpicker) icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
@@ -344,6 +391,31 @@
                         <label className="block text-orange-300 mb-2">Your Character Name</label>
                         <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full px-4 py-2 bg-black/60 border border-amber-600 rounded text-white" placeholder="Enter your name" />
                       </div>
+                      
+                      <div className="space-y-2">
+                        <label className="block text-orange-300 mb-2">Your Roles</label>
+                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                          <input type="checkbox" checked={wantsCaptain} onChange={(e) => setWantsCaptain(e.target.checked)} className="w-5 h-5" />
+                          <Shield className="w-5 h-5" />
+                          I want to be a Captain
+                        </label>
+                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                          <input type="checkbox" checked={isLockpicker} onChange={(e) => setIsLockpicker(e.target.checked)} className="w-5 h-5" />
+                          <Key className="w-5 h-5 text-yellow-500" />
+                          Lockpicker
+                        </label>
+                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                          <input type="checkbox" checked={isHealer} onChange={(e) => setIsHealer(e.target.checked)} className="w-5 h-5" />
+                          <Heart className="w-5 h-5 text-red-500" />
+                          Healer
+                        </label>
+                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                          <input type="checkbox" checked={isBard} onChange={(e) => setIsBard(e.target.checked)} className="w-5 h-5" />
+                          <Music className="w-5 h-5 text-purple-500" />
+                          Bard
+                        </label>
+                      </div>
+                      
                       <div className="flex gap-4">
                         <button onClick={createEvent} disabled={!characterName.trim() || loading} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
                           {loading ? 'Creating...' : 'Create Event'}
@@ -442,13 +514,53 @@
                       </h3>
                       <div className="space-y-2">
                         {eventData?.participants?.map((p, idx) => (
-                          <div key={idx} className="bg-black/60 p-4 rounded border border-amber-600 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <span className="text-white font-bold">{p.name}</span>
-                              {p.isMarshall && <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">MARSHALL</span>}
-                              {p.wantsCaptain && <span className="bg-amber-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1"><Shield className="w-3 h-3" />CAPTAIN</span>}
-                            </div>
-                            <div className="flex gap-2">{getRoleIcons(p)}</div>
+                          <div key={idx} className="bg-black/60 p-4 rounded border border-amber-600">
+                            {editingPlayer === idx ? (
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-white font-bold">{p.name}</span>
+                                  <button onClick={() => setEditingPlayer(null)} className="text-gray-400 hover:text-white">Cancel</button>
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                    <input type="checkbox" checked={p.wantsCaptain} onChange={(e) => updatePlayerRoles(idx, { wantsCaptain: e.target.checked })} className="w-5 h-5" />
+                                    <Shield className="w-5 h-5" />
+                                    Wants to be Captain
+                                  </label>
+                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                    <input type="checkbox" checked={p.lockpicker} onChange={(e) => updatePlayerRoles(idx, { lockpicker: e.target.checked })} className="w-5 h-5" />
+                                    <Key className="w-5 h-5 text-yellow-500" />
+                                    Lockpicker
+                                  </label>
+                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                    <input type="checkbox" checked={p.healer} onChange={(e) => updatePlayerRoles(idx, { healer: e.target.checked })} className="w-5 h-5" />
+                                    <Heart className="w-5 h-5 text-red-500" />
+                                    Healer
+                                  </label>
+                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                    <input type="checkbox" checked={p.bard} onChange={(e) => updatePlayerRoles(idx, { bard: e.target.checked })} className="w-5 h-5" />
+                                    <Music className="w-5 h-5 text-purple-500" />
+                                    Bard
+                                  </label>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-white font-bold">{p.name}</span>
+                                  {p.isMarshall && <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">MARSHALL</span>}
+                                  {p.wantsCaptain && <span className="bg-amber-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1"><Shield className="w-3 h-3" />CAPTAIN</span>}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex gap-2">{getRoleIcons(p)}</div>
+                                  {isMarshall && (
+                                    <button onClick={() => setEditingPlayer(idx)} className="text-orange-300 hover:text-orange-400 p-1" title="Edit roles">
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
