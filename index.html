@@ -142,7 +142,7 @@
 
           // Poll for updates when in lobby or during draft
           useEffect(() => {
-            if ((view === 'lobby' || view === 'captainChoice' || view === 'teamPicking') && eventId && SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec') {
+            if ((view === 'lobby' || view === 'captainChoice' || view === 'teamPicking') && eventId) {
               const interval = setInterval(async () => {
                 try {
                   const response = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
@@ -186,11 +186,6 @@
           };
 
           const createEvent = async () => {
-            if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec') {
-              setError('Please configure your Google Apps Script URL in the HTML file!');
-              return;
-            }
-
             setLoading(true);
             setError('');
             
@@ -232,11 +227,6 @@
           };
 
           const joinEvent = async () => {
-            if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec') {
-              setError('Please configure your Google Apps Script URL in the HTML file!');
-              return;
-            }
-
             setLoading(true);
             setError('');
 
@@ -481,11 +471,6 @@
               return;
             }
 
-            if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec') {
-              setError('Please configure your Google Apps Script URL in the HTML file!');
-              return;
-            }
-
             setLoading(true);
             setError('');
 
@@ -516,11 +501,6 @@
           };
 
           const updatePlayerRoles = async (playerIndex, updates) => {
-            if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec') {
-              setError('Please configure your Google Apps Script URL in the HTML file!');
-              return;
-            }
-
             setLoading(true);
             setError('');
 
