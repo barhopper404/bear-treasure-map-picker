@@ -114,6 +114,9 @@
           const [spinningWheel, setSpinningWheel] = useState(false);
           const [wheelNames, setWheelNames] = useState([]);
           const [currentWheelName, setCurrentWheelName] = useState('');
+          const [captainChoiceTimer, setCaptainChoiceTimer] = useState(45);
+          const [draftTimer, setDraftTimer] = useState(60);
+          const [hasJoined, setHasJoined] = useState(false);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -227,6 +230,11 @@
           };
 
           const joinEvent = async () => {
+            if (hasJoined) {
+              setError('You have already joined this event!');
+              return;
+            }
+
             setLoading(true);
             setError('');
 
@@ -240,12 +248,27 @@
             };
 
             try {
-              // First, fetch the current event to verify it exists
+              // First, fetch the current event to verify it exists and is not locked
               const checkResponse = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
               const checkResult = await checkResponse.json();
               
               if (!checkResult.success) {
                 setError('Event not found: ' + checkResult.error);
+                setLoading(false);
+                return;
+              }
+
+              // Check if event is locked (started)
+              if (checkResult.eventData.started) {
+                setError('This event has already started and is locked.');
+                setLoading(false);
+                return;
+              }
+
+              // Check for duplicate usernames
+              const existingNames = checkResult.eventData.participants.map(p => p.name.toLowerCase());
+              if (existingNames.includes(characterName.toLowerCase())) {
+                setError('A player with this name has already joined. Please choose a different character name.');
                 setLoading(false);
                 return;
               }
@@ -264,6 +287,7 @@
               
               if (result.success) {
                 setEventData(result.eventData);
+                setHasJoined(true);
                 setView('lobby');
               } else {
                 setError('Failed to join event: ' + (result.error || 'Unknown error') + (result.debug ? ' - Debug: ' + JSON.stringify(result.debug) : ''));
@@ -393,8 +417,84 @@
           };
 
           const startDrafting = () => {
+            setDraftTimer(60);
             setView('teamPicking');
           };
+
+          const handleCaptainTimeout = async () => {
+            // First captain timed out, ask second captain
+            if (pickingCaptain === eventData.firstPicker) {
+              const otherCaptain = pickingCaptain === 0 ? 1 : 0;
+              setPickingCaptain(otherCaptain);
+              setCaptainChoiceTimer(45);
+              
+              // Update event data
+              const updatedEventData = {
+                ...eventData,
+                currentPicker: otherCaptain,
+                firstPickerTimedOut: true
+              };
+              
+              try {
+                const params = new URLSearchParams({
+                  action: 'updateEvent',
+                  eventId: eventId,
+                  eventData: JSON.stringify(updatedEventData)
+                });
+                await fetch(`${SCRIPT_URL}?${params.toString()}`);
+                setEventData(updatedEventData);
+              } catch (err) {
+                console.error('Error updating after timeout:', err);
+              }
+            } else {
+              // Second captain also timed out, randomize
+              const randomDefer = Math.random() < 0.5;
+              if (randomDefer) {
+                await deferFirstPick();
+              } else {
+                startDrafting();
+              }
+            }
+          };
+
+          const handleDraftTimeout = async () => {
+            if (availablePlayers.length > 0) {
+              // Auto-pick random player
+              const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+              await pickPlayer(randomPlayer);
+            }
+          };
+
+          // Captain choice timer
+          useEffect(() => {
+            if (view === 'captainChoice' && captainChoiceTimer > 0) {
+              const timer = setTimeout(() => {
+                setCaptainChoiceTimer(prev => prev - 1);
+              }, 1000);
+              return () => clearTimeout(timer);
+            } else if (view === 'captainChoice' && captainChoiceTimer === 0) {
+              handleCaptainTimeout();
+            }
+          }, [view, captainChoiceTimer]);
+
+          // Draft timer
+          useEffect(() => {
+            if (view === 'teamPicking' && availablePlayers.length > 0 && draftTimer > 0) {
+              const timer = setTimeout(() => {
+                setDraftTimer(prev => prev - 1);
+              }, 1000);
+              return () => clearTimeout(timer);
+            } else if (view === 'teamPicking' && draftTimer === 0 && availablePlayers.length > 0) {
+              handleDraftTimeout();
+            }
+          }, [view, draftTimer, availablePlayers]);
+
+          // Reset draft timer when picker changes
+          useEffect(() => {
+            if (view === 'teamPicking') {
+              setDraftTimer(60);
+            }
+          }, [pickingCaptain]);
 
           const pickPlayer = async (player) => {
             const teamKey = pickingCaptain === 0 ? 'captain1' : 'captain2';
@@ -731,6 +831,9 @@
                       <div className="text-right">
                         <div className="text-orange-300 text-sm">Event ID</div>
                         <div className="text-2xl font-bold text-white">{eventId}</div>
+                        {eventData?.started && (
+                          <div className="text-red-400 text-sm mt-1">🔒 LOCKED</div>
+                        )}
                       </div>
                     </div>
                     <button onClick={copyEventLink} className="w-full mb-6 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
@@ -845,6 +948,10 @@
                     
                     {isFirstCaptain ? (
                       <div className="bg-green-900/60 p-8 rounded border-2 border-green-500">
+                        <div className="text-center mb-4">
+                          <div className="text-6xl font-bold text-yellow-400 mb-2">{captainChoiceTimer}</div>
+                          <p className="text-yellow-200">seconds remaining</p>
+                        </div>
                         <h3 className="text-3xl text-green-300 font-bold mb-4 text-center">You Pick First!</h3>
                         <p className="text-green-200 text-center mb-6">
                           You can pick your team first, or defer to pick the first treasure map later.
@@ -866,6 +973,7 @@
                       </div>
                     ) : (
                       <div className="bg-gray-900/60 p-8 rounded border-2 border-gray-500 text-center">
+                        <div className="text-6xl font-bold text-yellow-400 mb-4">{captainChoiceTimer}</div>
                         <h3 className="text-2xl text-gray-300 mb-4">Waiting for {captains[pickingCaptain]?.name}</h3>
                         <p className="text-gray-400">
                           {captains[pickingCaptain]?.name} is deciding whether to pick their team first or defer...
@@ -893,6 +1001,15 @@
                   )}
                   <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
                     <h2 className="text-3xl font-bold text-amber-400 mb-6 text-center">Team Selection</h2>
+                    
+                    {availablePlayers.length > 0 && (
+                      <div className="text-center mb-4">
+                        <div className="inline-block bg-yellow-600 px-6 py-3 rounded-lg">
+                          <span className="text-white text-2xl font-bold">{draftTimer}s</span>
+                          <span className="text-yellow-200 ml-2">to pick</span>
+                        </div>
+                      </div>
+                    )}
                     
                     {isCurrentCaptain && availablePlayers.length > 0 && (
                       <div className="bg-green-900/60 p-4 rounded border-2 border-green-500 mb-6 text-center">
