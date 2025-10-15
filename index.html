@@ -16,7 +16,7 @@
         const { useState, useEffect } = React;
         
         // IMPORTANT: Replace this with your Google Apps Script Web App URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec';
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
         
         // Lucide React icons as simple SVG components
         const Users = (props) => (
@@ -196,6 +196,10 @@
             try {
               const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                   action: 'addParticipant',
                   eventId: eventId,
@@ -203,7 +207,11 @@
                 })
               });
 
-              const result = await response.json();
+              // With no-cors, we can't read the response, so wait a moment then fetch the event
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              const getResponse = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
+              const result = await getResponse.json();
               
               if (result.success) {
                 setEventData(result.eventData);
@@ -212,8 +220,8 @@
                 setError('Failed to join event: ' + result.error);
               }
             } catch (err) {
-              setError('Error joining event. Please check the Event ID and try again.');
-              console.error(err);
+              setError('Error joining event. Please check the Event ID and try again. Error: ' + err.message);
+              console.error('Join event error:', err);
             } finally {
               setLoading(false);
             }
