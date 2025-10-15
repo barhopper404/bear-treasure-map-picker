@@ -16,7 +16,7 @@
         const { useState, useEffect } = React;
         
         // IMPORTANT: Replace this with your Google Apps Script Web App URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec';
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
         
         // Lucide React icons as simple SVG components
         const Users = (props) => (
@@ -148,16 +148,15 @@
             };
 
             try {
-              const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                  action: 'createEvent',
-                  eventId: newEventId,
-                  marshall: characterName,
-                  participants: [participant]
-                })
+              // Use GET request with parameters instead of POST for better compatibility
+              const params = new URLSearchParams({
+                action: 'createEvent',
+                eventId: newEventId,
+                marshall: characterName,
+                participantData: JSON.stringify([participant])
               });
-
+              
+              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
               const result = await response.json();
               
               if (result.success) {
@@ -168,8 +167,8 @@
                 setError('Failed to create event: ' + result.error);
               }
             } catch (err) {
-              setError('Error creating event. Please try again.');
-              console.error(err);
+              setError('Error creating event. Please try again. Error: ' + err.message);
+              console.error('Create event error:', err);
             } finally {
               setLoading(false);
             }
@@ -194,30 +193,33 @@
             };
 
             try {
-              const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  action: 'addParticipant',
-                  eventId: eventId,
-                  participant: participant
-                })
-              });
-
-              // With no-cors, we can't read the response, so wait a moment then fetch the event
-              await new Promise(resolve => setTimeout(resolve, 1500));
+              // First, fetch the current event to verify it exists
+              const checkResponse = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
+              const checkResult = await checkResponse.json();
               
-              const getResponse = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
-              const result = await getResponse.json();
+              if (!checkResult.success) {
+                setError('Event not found: ' + checkResult.error);
+                setLoading(false);
+                return;
+              }
+              
+              // Now add the participant
+              const params = new URLSearchParams({
+                action: 'addParticipant',
+                eventId: eventId,
+                participantData: JSON.stringify(participant)
+              });
+              
+              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              const result = await response.json();
+              
+              console.log('Join result:', result);
               
               if (result.success) {
                 setEventData(result.eventData);
                 setView('lobby');
               } else {
-                setError('Failed to join event: ' + result.error);
+                setError('Failed to join event: ' + (result.error || 'Unknown error') + (result.debug ? ' - Debug: ' + JSON.stringify(result.debug) : ''));
               }
             } catch (err) {
               setError('Error joining event. Please check the Event ID and try again. Error: ' + err.message);
