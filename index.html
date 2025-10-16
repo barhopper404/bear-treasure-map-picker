@@ -133,6 +133,8 @@
           const [tempRoles, setTempRoles] = useState({});
           const [discordUser, setDiscordUser] = useState(null);
           const [isAuthenticating, setIsAuthenticating] = useState(false);
+          const [leaderboard, setLeaderboard] = useState([]);
+          const [showWinnerSelect, setShowWinnerSelect] = useState(false);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -186,7 +188,52 @@
             } catch (e) {
               console.log('localStorage not available:', e);
             }
+            
+            // Load leaderboard
+            fetchLeaderboard();
           }, []);
+
+          const fetchLeaderboard = async () => {
+            try {
+              const response = await fetch(`${SCRIPT_URL}?action=getLeaderboard`);
+              const result = await response.json();
+              if (result.success) {
+                setLeaderboard(result.leaderboard || []);
+              }
+            } catch (err) {
+              console.error('Error fetching leaderboard:', err);
+            }
+          };
+
+          const recordWinner = async (winningTeam) => {
+            if (!confirm(`Confirm ${winningTeam === 'captain1' ? eventData?.teamNames?.captain1 || `Team 1 (${captains[0]?.name})` : eventData?.teamNames?.captain2 || `Team 2 (${captains[1]?.name})`} won?`)) {
+              return;
+            }
+
+            setLoading(true);
+            try {
+              const params = new URLSearchParams({
+                action: 'recordWinner',
+                eventId: eventId,
+                winningTeam: winningTeam
+              });
+
+              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              const result = await response.json();
+
+              if (result.success) {
+                setEventData(result.eventData);
+                setShowWinnerSelect(false);
+                alert('Winner recorded! Stats have been updated.');
+              } else {
+                setError('Failed to record winner: ' + result.error);
+              }
+            } catch (err) {
+              setError('Error recording winner: ' + err.message);
+            } finally {
+              setLoading(false);
+            }
+          };
 
           const handleDiscordCallback = async (code) => {
             setIsAuthenticating(true);
