@@ -1,0 +1,815 @@
+const { useState, useEffect } = React;
+
+function TreasureMapTeamPicker() {
+    // State management
+    const [view, setView] = useState('home');
+    const [eventId, setEventId] = useState('');
+    const [eventData, setEventData] = useState(null);
+    const [characterName, setCharacterName] = useState('');
+    const [wantsCaptain, setWantsCaptain] = useState(false);
+    const [isLockpicker, setIsLockpicker] = useState(false);
+    const [isHealer, setIsHealer] = useState(false);
+    const [isBard, setIsBard] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [captains, setCaptains] = useState([]);
+    const [pickingCaptain, setPickingCaptain] = useState(0);
+    const [firstPickerDeferred, setFirstPickerDeferred] = useState(false);
+    const [teams, setTeams] = useState({ captain1: [], captain2: [] });
+    const [availablePlayers, setAvailablePlayers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [editingPlayer, setEditingPlayer] = useState(null);
+    const [spinningWheel, setSpinningWheel] = useState(false);
+    const [currentWheelName, setCurrentWheelName] = useState('');
+    const [captainChoiceTimer, setCaptainChoiceTimer] = useState(45);
+    const [draftTimer, setDraftTimer] = useState(60);
+    const [hasJoined, setHasJoined] = useState(false);
+    const [isAutoPicking, setIsAutoPicking] = useState(false);
+    const [justDrafted, setJustDrafted] = useState(null);
+    const [isDrafting, setIsDrafting] = useState(false);
+    const [draftTimerSetting, setDraftTimerSetting] = useState(60);
+    const [captainChoiceTimerSetting, setCaptainChoiceTimerSetting] = useState(45);
+    const [teamNames, setTeamNames] = useState({ captain1: '', captain2: '' });
+    const [editingTeamName, setEditingTeamName] = useState(null);
+    const [tempTeamName, setTempTeamName] = useState('');
+    const [tempRoles, setTempRoles] = useState({});
+    const [discordUser, setDiscordUser] = useState(null);
+    const [totalMaps, setTotalMaps] = useState(20);
+    const [mapCoords, setMapCoords] = useState('');
+    const [showAddPlayer, setShowAddPlayer] = useState(false);
+    const [newPlayerName, setNewPlayerName] = useState('');
+    const [newPlayerCaptain, setNewPlayerCaptain] = useState(false);
+    const [newPlayerLockpicker, setNewPlayerLockpicker] = useState(false);
+    const [newPlayerHealer, setNewPlayerHealer] = useState(false);
+    const [newPlayerBard, setNewPlayerBard] = useState(false);
+
+    // Initialize on mount
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventParam = urlParams.get('event');
+        const codeParam = urlParams.get('code');
+        
+        if (codeParam) {
+            handleDiscordCallback(codeParam);
+        } else if (eventParam) {
+            setEventId(eventParam);
+            const savedDiscord = window.StorageUtils.getDiscordUser();
+            if (savedDiscord) {
+                setView('join');
+            }
+        }
+
+        // Load saved data
+        const savedName = window.StorageUtils.getCharacterName();
+        if (savedName) setCharacterName(savedName);
+        
+        const savedDiscord = window.StorageUtils.getDiscordUser();
+        if (savedDiscord) setDiscordUser(savedDiscord);
+    }, []);
+
+    // Save character name and discord user
+    useEffect(() => {
+        if (characterName) window.StorageUtils.saveCharacterName(characterName);
+        if (discordUser) window.StorageUtils.saveDiscordUser(discordUser);
+    }, [characterName, discordUser]);
+
+    // Discord authentication
+    const handleDiscordCallback = async (code) => {
+        try {
+            const result = await window.ApiUtils.exchangeDiscordCode(code);
+            
+            if (result.success) {
+                setDiscordUser(result.user);
+                window.history.replaceState({}, document.title, window.location.pathname + (eventId ? `?event=${eventId}` : ''));
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('event')) {
+                    setView('join');
+                }
+            } else {
+                setError('Discord authentication failed: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error during Discord authentication: ' + err.message);
+        }
+    };
+
+    const loginWithDiscord = () => {
+        const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${window.AppConfig.DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(window.AppConfig.REDIRECT_URI)}&response_type=code&scope=identify`;
+        window.location.href = authUrl;
+    };
+
+    // Polling for updates
+    useEffect(() => {
+        if ((view === 'lobby' || view === 'captainChoice' || view === 'teamPicking') && eventId) {
+            const interval = setInterval(async () => {
+                try {
+                    const result = await window.ApiUtils.getEvent(eventId);
+                    if (result.success && result.eventData) {
+                        const currentDataStr = JSON.stringify(eventData);
+                        const newDataStr = JSON.stringify(result.eventData);
+                        
+                        if (currentDataStr !== newDataStr) {
+                            setEventData(result.eventData);
+                            
+                            if (result.eventData.started && result.eventData.captains) {
+                                setCaptains(result.eventData.captains);
+                                
+                                if (result.eventData.currentPicker !== pickingCaptain) {
+                                    setPickingCaptain(result.eventData.currentPicker || 0);
+                                }
+                                
+                                if (result.eventData.teams) {
+                                    setTeams(result.eventData.teams);
+                                }
+                                
+                                if (result.eventData.availablePlayers) {
+                                    setAvailablePlayers(result.eventData.availablePlayers);
+                                }
+                                
+                                if (view === 'lobby' && result.eventData.started) {
+                                    setView('captainChoice');
+                                }
+                                if (view === 'captainChoice' && result.eventData.deferredFirstPick !== undefined) {
+                                    setFirstPickerDeferred(result.eventData.deferredFirstPick);
+                                    if (result.eventData.deferredFirstPick || (result.eventData.teams && (result.eventData.teams.captain1.length > 0 || result.eventData.teams.captain2.length > 0))) {
+                                        setView('teamPicking');
+                                    }
+                                }
+                                if (result.eventData.completed) {
+                                    setView('complete');
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error polling for updates:', err);
+                }
+            }, 3000);
+            
+            return () => clearInterval(interval);
+        }
+    }, [view, eventId, eventData, teams, availablePlayers, pickingCaptain]);
+
+    // Generate random event ID
+    const generateEventId = () => {
+        return Math.random().toString(36).substring(2, 8).toUpperCase();
+    };
+
+    // Create event handler
+    const handleCreateEvent = async () => {
+        setLoading(true);
+        setError('');
+        
+        const newEventId = generateEventId();
+        const participant = {
+            name: characterName,
+            discordUser: discordUser,
+            wantsCaptain: wantsCaptain,
+            lockpicker: isLockpicker,
+            healer: isHealer,
+            bard: isBard,
+            isMarshall: true
+        };
+
+        try {
+            const result = await window.ApiUtils.createEvent(newEventId, characterName, discordUser, participant);
+            
+            if (result.success) {
+                setEventId(newEventId);
+                setEventData(result.eventData);
+                setView('lobby');
+            } else {
+                setError('Failed to create event: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error creating event. Please try again. Error: ' + err.message);
+            console.error('Create event error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Join event handler
+    const handleJoinEvent = async () => {
+        if (hasJoined) {
+            setError('You have already joined this event!');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        const participant = {
+            name: characterName,
+            discordUser: discordUser,
+            wantsCaptain,
+            lockpicker: isLockpicker,
+            healer: isHealer,
+            bard: isBard,
+            isMarshall: false
+        };
+
+        try {
+            const checkResult = await window.ApiUtils.getEvent(eventId);
+            
+            if (!checkResult.success) {
+                setError('Event not found: ' + checkResult.error);
+                setLoading(false);
+                return;
+            }
+
+            if (checkResult.eventData.started) {
+                setError('This event has already started and is locked.');
+                setLoading(false);
+                return;
+            }
+
+            const existingNames = checkResult.eventData.participants.map(p => p.name.toLowerCase());
+            if (existingNames.includes(characterName.toLowerCase())) {
+                setError('A player with this name has already joined. Please choose a different character name.');
+                setLoading(false);
+                return;
+            }
+            
+            const result = await window.ApiUtils.addParticipant(eventId, participant);
+            
+            if (result.success) {
+                setEventData(result.eventData);
+                setHasJoined(true);
+                setView('lobby');
+            } else {
+                setError('Failed to join event: ' + (result.error || 'Unknown error'));
+            }
+        } catch (err) {
+            setError('Error joining event. Please check the Event ID and try again. Error: ' + err.message);
+            console.error('Join event error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Copy event link
+    const copyEventLink = () => {
+        const link = `${window.location.origin}${window.location.pathname}?event=${eventId}`;
+        navigator.clipboard.writeText(link);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+    };
+
+    // Wheel spinning animation
+    const spinWheel = (players) => {
+        return players[Math.floor(Math.random() * players.length)];
+    };
+
+    const animateWheelSpin = (names, callback) => {
+        setSpinningWheel(true);
+        
+        let count = 0;
+        const spinDuration = 3000;
+        const intervalTime = 100;
+        const totalSpins = spinDuration / intervalTime;
+        
+        const interval = setInterval(() => {
+            setCurrentWheelName(names[count % names.length].name);
+            count++;
+            
+            if (count >= totalSpins) {
+                clearInterval(interval);
+                const winner = spinWheel(names);
+                setCurrentWheelName(winner.name);
+                
+                setTimeout(() => {
+                    setSpinningWheel(false);
+                    callback(winner);
+                }, 1000);
+            }
+        }, intervalTime);
+    };
+
+    // Start event and select captains
+    const handleStartEvent = async () => {
+        const potentialCaptains = eventData.participants.filter(p => p.wantsCaptain);
+        
+        if (potentialCaptains.length < 2) {
+            alert('Need at least 2 people willing to be captain!');
+            return;
+        }
+
+        animateWheelSpin(potentialCaptains, (captain1) => {
+            const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
+            
+            setTimeout(() => {
+                animateWheelSpin(remainingCaptains, async (captain2) => {
+                    const firstPicker = Math.random() < 0.5 ? 0 : 1;
+                    
+                    const selectedCaptains = [captain1, captain2];
+                    const nonCaptains = eventData.participants.filter(
+                        p => p.name !== captain1.name && p.name !== captain2.name
+                    );
+
+                    const updatedEventData = {
+                        ...eventData,
+                        started: true,
+                        captains: selectedCaptains,
+                        firstPicker: firstPicker,
+                        currentPicker: firstPicker,
+                        availablePlayers: nonCaptains,
+                        teams: { captain1: [], captain2: [] },
+                        deferredFirstPick: false
+                    };
+
+                    try {
+                        await window.ApiUtils.updateEvent(eventId, updatedEventData);
+                        
+                        setCaptains(selectedCaptains);
+                        setPickingCaptain(firstPicker);
+                        setAvailablePlayers(nonCaptains);
+                        setTeams({ captain1: [], captain2: [] });
+                        setView('captainChoice');
+                    } catch (err) {
+                        setError('Error starting event: ' + err.message);
+                    }
+                });
+            }, 1500);
+        });
+    };
+// Defer first pick
+    const handleDeferFirstPick = async () => {
+        setFirstPickerDeferred(true);
+        
+        const newCurrentPicker = pickingCaptain === 0 ? 1 : 0;
+        setPickingCaptain(newCurrentPicker);
+        
+        const updatedEventData = {
+            ...eventData,
+            deferredFirstPick: true,
+            currentPicker: newCurrentPicker
+        };
+
+        try {
+            await window.ApiUtils.updateEvent(eventId, updatedEventData);
+            setEventData(updatedEventData);
+            setView('teamPicking');
+        } catch (err) {
+            setError('Error deferring pick: ' + err.message);
+        }
+    };
+
+    // Start drafting
+    const handleStartDrafting = () => {
+        setDraftTimer(draftTimerSetting);
+        setView('teamPicking');
+    };
+
+    // Captain choice timeout
+    const handleCaptainTimeout = async () => {
+        if (pickingCaptain === eventData.firstPicker) {
+            const otherCaptain = pickingCaptain === 0 ? 1 : 0;
+            setPickingCaptain(otherCaptain);
+            setCaptainChoiceTimer(captainChoiceTimerSetting);
+            
+            const updatedEventData = {
+                ...eventData,
+                currentPicker: otherCaptain,
+                firstPickerTimedOut: true
+            };
+            
+            try {
+                await window.ApiUtils.updateEvent(eventId, updatedEventData);
+                setEventData(updatedEventData);
+            } catch (err) {
+                console.error('Error updating after timeout:', err);
+            }
+        } else {
+            const randomDefer = Math.random() < 0.5;
+            if (randomDefer) {
+                await handleDeferFirstPick();
+            } else {
+                handleStartDrafting();
+            }
+        }
+    };
+
+    // Draft timeout
+    const handleDraftTimeout = async () => {
+        if (availablePlayers.length > 0 && !isAutoPicking) {
+            setIsAutoPicking(true);
+            const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+            await handlePickPlayer(randomPlayer);
+            setTimeout(() => setIsAutoPicking(false), 1000);
+        }
+    };
+
+    // Captain choice timer effect
+    useEffect(() => {
+        if (view === 'captainChoice' && captainChoiceTimer > 0) {
+            const timer = setTimeout(() => {
+                setCaptainChoiceTimer(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        } else if (view === 'captainChoice' && captainChoiceTimer === 0) {
+            handleCaptainTimeout();
+        }
+    }, [view, captainChoiceTimer]);
+
+    // Draft timer effect
+    useEffect(() => {
+        if (view === 'teamPicking' && availablePlayers.length > 0 && draftTimer > 0 && !isAutoPicking) {
+            const timer = setTimeout(() => {
+                setDraftTimer(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        } else if (view === 'teamPicking' && draftTimer === 0 && availablePlayers.length > 0 && !isAutoPicking) {
+            handleDraftTimeout();
+        }
+    }, [view, draftTimer, availablePlayers, isAutoPicking]);
+
+    // Reset draft timer when picker changes
+    useEffect(() => {
+        if (view === 'teamPicking' && !isAutoPicking) {
+            setDraftTimer(draftTimerSetting);
+        }
+    }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length, draftTimerSetting]);
+
+    // Pick player handler
+    const handlePickPlayer = async (player) => {
+        if (isDrafting) return;
+        
+        setIsDrafting(true);
+        
+        const teamKey = pickingCaptain === 0 ? 'captain1' : 'captain2';
+        
+        const newTeams = {
+            ...teams,
+            [teamKey]: [...teams[teamKey], player]
+        };
+        
+        const newAvailablePlayers = availablePlayers.filter(p => p.name !== player.name);
+        
+        setTeams(newTeams);
+        setAvailablePlayers(newAvailablePlayers);
+        setDraftTimer(draftTimerSetting);
+        setJustDrafted(player.name);
+        setTimeout(() => setJustDrafted(null), 2000);
+        
+        const updatedEventData = {
+            ...eventData,
+            teams: newTeams,
+            availablePlayers: newAvailablePlayers,
+            currentPicker: pickingCaptain === 0 ? 1 : 0,
+            teamNames: teamNames
+        };
+
+        try {
+            await window.ApiUtils.updateEvent(eventId, updatedEventData);
+            setEventData(updatedEventData);
+        } catch (err) {
+            console.error('Error updating teams:', err);
+        }
+        
+        setTimeout(() => {
+            setIsDrafting(false);
+        }, 500);
+        
+        if (newAvailablePlayers.length === 1) {
+            const otherTeamKey = pickingCaptain === 0 ? 'captain2' : 'captain1';
+            const finalTeams = {
+                ...newTeams,
+                [otherTeamKey]: [...newTeams[otherTeamKey], newAvailablePlayers[0]]
+            };
+            
+            setTeams(finalTeams);
+            setAvailablePlayers([]);
+            
+            const finalEventData = {
+                ...eventData,
+                teams: finalTeams,
+                availablePlayers: [],
+                completed: true,
+                teamNames: teamNames
+            };
+
+            try {
+                await window.ApiUtils.updateEvent(eventId, finalEventData);
+            } catch (err) {
+                console.error('Error finalizing teams:', err);
+            }
+            
+            setView('complete');
+        } else {
+            setPickingCaptain(prev => prev === 0 ? 1 : 0);
+        }
+    };
+
+    // Add manual player
+    const handleAddManualPlayer = async () => {
+        if (!newPlayerName.trim()) {
+            setError('Player name is required!');
+            return;
+        }
+
+        const existingNames = eventData.participants.map(p => p.name.toLowerCase());
+        if (existingNames.includes(newPlayerName.toLowerCase())) {
+            setError('A player with this name already exists!');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        const manualPlayer = {
+            name: newPlayerName,
+            discordUser: {
+                id: `manual_${Date.now()}`,
+                username: `${newPlayerName} (Manual)`
+            },
+            wantsCaptain: newPlayerCaptain,
+            lockpicker: newPlayerLockpicker,
+            healer: newPlayerHealer,
+            bard: newPlayerBard,
+            isMarshall: false,
+            isManual: true
+        };
+
+        try {
+            const result = await window.ApiUtils.addParticipant(eventId, manualPlayer);
+
+            if (result.success) {
+                setEventData(result.eventData);
+                setShowAddPlayer(false);
+                setNewPlayerName('');
+                setNewPlayerCaptain(false);
+                setNewPlayerLockpicker(false);
+                setNewPlayerHealer(false);
+                setNewPlayerBard(false);
+            } else {
+                setError('Failed to add player: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error adding player: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Remove player
+    const handleRemovePlayer = async (playerIndex) => {
+        if (!confirm('Are you sure you want to kick this player?')) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const updatedEventData = { ...eventData };
+            updatedEventData.participants.splice(playerIndex, 1);
+
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            if (result.success) {
+                setEventData(result.eventData);
+            } else {
+                setError('Failed to remove player: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error removing player: ' + err.message);
+            console.error('Remove player error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Update player roles
+    const handleUpdatePlayerRoles = async (playerIndex, updates) => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const updatedEventData = { ...eventData };
+            updatedEventData.participants[playerIndex] = {
+                ...updatedEventData.participants[playerIndex],
+                ...updates
+            };
+
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            if (result.success) {
+                setEventData(result.eventData);
+                setEditingPlayer(null);
+                setTempRoles({});
+            } else {
+                setError('Failed to update player: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error updating player: ' + err.message);
+            console.error('Update player error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Start editing roles
+    const handleStartEditingRoles = (playerIndex, participant) => {
+        setEditingPlayer(playerIndex);
+        setTempRoles({
+            wantsCaptain: participant.wantsCaptain,
+            lockpicker: participant.lockpicker,
+            healer: participant.healer,
+            bard: participant.bard
+        });
+    };
+
+    // Update team name
+    const handleUpdateTeamName = async (teamKey) => {
+        const newName = tempTeamName;
+        const updatedTeamNames = { ...teamNames, [teamKey]: newName };
+        setTeamNames(updatedTeamNames);
+        
+        try {
+            const updatedEventData = {
+                ...eventData,
+                teamNames: updatedTeamNames
+            };
+            
+            await window.ApiUtils.updateEvent(eventId, updatedEventData);
+            setEventData(updatedEventData);
+            setEditingTeamName(null);
+            setTempTeamName('');
+        } catch (err) {
+            console.error('Error updating team name:', err);
+        }
+    };
+
+    // Get role icons
+    const getRoleIcons = (participant) => {
+        const { Key, Heart, Music } = window.Icons;
+        const icons = [];
+        if (participant.lockpicker) icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
+        if (participant.healer) icons.push(<Heart key="heart" className="w-4 h-4 text-red-500" />);
+        if (participant.bard) icons.push(<Music key="music" className="w-4 h-4 text-purple-500" />);
+        return icons;
+    };
+
+    // Render appropriate view
+    if (view === 'home') {
+        return (
+            <window.HomeView
+                characterName={characterName}
+                error={error}
+                setView={setView}
+            />
+        );
+    }
+
+    if (view === 'create') {
+        return (
+            <window.CreateEventView
+                discordUser={discordUser}
+                characterName={characterName}
+                setCharacterName={setCharacterName}
+                wantsCaptain={wantsCaptain}
+                setWantsCaptain={setWantsCaptain}
+                isLockpicker={isLockpicker}
+                setIsLockpicker={setIsLockpicker}
+                isHealer={isHealer}
+                setIsHealer={setIsHealer}
+                isBard={isBard}
+                setIsBard={setIsBard}
+                error={error}
+                loading={loading}
+                onCreateEvent={handleCreateEvent}
+                onLoginWithDiscord={loginWithDiscord}
+                setView={setView}
+            />
+        );
+    }
+
+    if (view === 'join') {
+        return (
+            <window.JoinEventView
+                discordUser={discordUser}
+                eventId={eventId}
+                setEventId={setEventId}
+                characterName={characterName}
+                setCharacterName={setCharacterName}
+                wantsCaptain={wantsCaptain}
+                setWantsCaptain={setWantsCaptain}
+                isLockpicker={isLockpicker}
+                setIsLockpicker={setIsLockpicker}
+                isHealer={isHealer}
+                setIsHealer={setIsHealer}
+                isBard={isBard}
+                setIsBard={setIsBard}
+                error={error}
+                loading={loading}
+                onJoinEvent={handleJoinEvent}
+                onLoginWithDiscord={loginWithDiscord}
+                setView={setView}
+            />
+        );
+    }
+
+    if (view === 'lobby') {
+        return (
+            <window.LobbyView
+                characterName={characterName}
+                eventId={eventId}
+                eventData={eventData}
+                linkCopied={linkCopied}
+                spinningWheel={spinningWheel}
+                currentWheelName={currentWheelName}
+                editingPlayer={editingPlayer}
+                tempRoles={tempRoles}
+                setTempRoles={setTempRoles}
+                showAddPlayer={showAddPlayer}
+                setShowAddPlayer={setShowAddPlayer}
+                newPlayerName={newPlayerName}
+                setNewPlayerName={setNewPlayerName}
+                newPlayerCaptain={newPlayerCaptain}
+                setNewPlayerCaptain={setNewPlayerCaptain}
+                newPlayerLockpicker={newPlayerLockpicker}
+                setNewPlayerLockpicker={setNewPlayerLockpicker}
+                newPlayerHealer={newPlayerHealer}
+                setNewPlayerHealer={setNewPlayerHealer}
+                newPlayerBard={newPlayerBard}
+                setNewPlayerBard={setNewPlayerBard}
+                captainChoiceTimerSetting={captainChoiceTimerSetting}
+                setCaptainChoiceTimerSetting={setCaptainChoiceTimerSetting}
+                draftTimerSetting={draftTimerSetting}
+                setDraftTimerSetting={setDraftTimerSetting}
+                totalMaps={totalMaps}
+                setTotalMaps={setTotalMaps}
+                mapCoords={mapCoords}
+                setMapCoords={setMapCoords}
+                error={error}
+                loading={loading}
+                onCopyEventLink={copyEventLink}
+                onStartEditingRoles={handleStartEditingRoles}
+                onUpdatePlayerRoles={handleUpdatePlayerRoles}
+                onRemovePlayer={handleRemovePlayer}
+                onAddManualPlayer={handleAddManualPlayer}
+                onStartEvent={handleStartEvent}
+                setEditingPlayer={setEditingPlayer}
+                getRoleIcons={getRoleIcons}
+            />
+        );
+    }
+
+    if (view === 'captainChoice') {
+        return (
+            <window.CaptainChoiceView
+                characterName={characterName}
+                captains={captains}
+                pickingCaptain={pickingCaptain}
+                captainChoiceTimer={captainChoiceTimer}
+                onStartDrafting={handleStartDrafting}
+                onDeferFirstPick={handleDeferFirstPick}
+            />
+        );
+    }
+
+    if (view === 'teamPicking') {
+        return (
+            <window.TeamPickingView
+                characterName={characterName}
+                captains={captains}
+                pickingCaptain={pickingCaptain}
+                teams={teams}
+                availablePlayers={availablePlayers}
+                draftTimer={draftTimer}
+                isAutoPicking={isAutoPicking}
+                justDrafted={justDrafted}
+                isDrafting={isDrafting}
+                teamNames={teamNames}
+                editingTeamName={editingTeamName}
+                tempTeamName={tempTeamName}
+                setTempTeamName={setTempTeamName}
+                setEditingTeamName={setEditingTeamName}
+                onPickPlayer={handlePickPlayer}
+                onUpdateTeamName={handleUpdateTeamName}
+                getRoleIcons={getRoleIcons}
+            />
+        );
+    }
+
+    if (view === 'complete') {
+        return (
+            <window.CompleteView
+                characterName={characterName}
+                captains={captains}
+                teams={teams}
+                eventData={eventData}
+                setView={setView}
+                getRoleIcons={getRoleIcons}
+            />
+        );
+    }
+
+    return null;
+}
+
+// Render the app
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<TreasureMapTeamPicker />);
