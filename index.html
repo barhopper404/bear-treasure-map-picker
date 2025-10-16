@@ -119,6 +119,11 @@
           const [hasJoined, setHasJoined] = useState(false);
           const [isAutoPicking, setIsAutoPicking] = useState(false);
           const [justDrafted, setJustDrafted] = useState(null);
+          const [isDrafting, setIsDrafting] = useState(false);
+          const [draftTimerSetting, setDraftTimerSetting] = useState(60);
+          const [captainChoiceTimerSetting, setCaptainChoiceTimerSetting] = useState(45);
+          const [teamNames, setTeamNames] = useState({ captain1: '', captain2: '' });
+          const [editingTeamName, setEditingTeamName] = useState(null);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -441,7 +446,7 @@
           };
 
           const startDrafting = () => {
-            setDraftTimer(60);
+            setDraftTimer(draftTimerSetting);
             setView('teamPicking');
           };
 
@@ -450,7 +455,7 @@
             if (pickingCaptain === eventData.firstPicker) {
               const otherCaptain = pickingCaptain === 0 ? 1 : 0;
               setPickingCaptain(otherCaptain);
-              setCaptainChoiceTimer(45);
+              setCaptainChoiceTimer(captainChoiceTimerSetting);
               
               // Update event data
               const updatedEventData = {
@@ -518,11 +523,18 @@
           // Reset draft timer when picker changes
           useEffect(() => {
             if (view === 'teamPicking' && !isAutoPicking) {
-              setDraftTimer(60);
+              setDraftTimer(draftTimerSetting);
             }
-          }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length]); // Reset when any team changes
+          }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length, draftTimerSetting]); // Reset when any team changes
 
           const pickPlayer = async (player) => {
+            // Prevent double-clicking
+            if (isDrafting) {
+              return;
+            }
+            
+            setIsDrafting(true);
+            
             const teamKey = pickingCaptain === 0 ? 'captain1' : 'captain2';
             
             const newTeams = {
@@ -535,7 +547,9 @@
             // Update local state immediately for smooth UI
             setTeams(newTeams);
             setAvailablePlayers(newAvailablePlayers);
-            setDraftTimer(60); // Reset timer immediately
+            setDraftTimer(draftTimerSetting); // Reset to setting
+            setJustDrafted(player.name); // Highlight drafted player
+            setTimeout(() => setJustDrafted(null), 2000); // Clear after 2 seconds
             
             // Play draft sound
             try {
@@ -551,7 +565,8 @@
               ...eventData,
               teams: newTeams,
               availablePlayers: newAvailablePlayers,
-              currentPicker: pickingCaptain === 0 ? 1 : 0
+              currentPicker: pickingCaptain === 0 ? 1 : 0,
+              teamNames: teamNames
             };
 
             try {
@@ -566,6 +581,11 @@
             } catch (err) {
               console.error('Error updating teams:', err);
             }
+            
+            // Allow drafting again after a short delay
+            setTimeout(() => {
+              setIsDrafting(false);
+            }, 500);
             
             // Check if all players are picked
             if (newAvailablePlayers.length === 1) {
@@ -592,7 +612,8 @@
                 ...eventData,
                 teams: finalTeams,
                 availablePlayers: [],
-                completed: true
+                completed: true,
+                teamNames: teamNames
               };
 
               try {
@@ -678,6 +699,30 @@
               console.error('Update player error:', err);
             } finally {
               setLoading(false);
+            }
+          };
+
+          const updateTeamName = async (teamKey, newName) => {
+            const updatedTeamNames = { ...teamNames, [teamKey]: newName };
+            setTeamNames(updatedTeamNames);
+            
+            try {
+              const updatedEventData = {
+                ...eventData,
+                teamNames: updatedTeamNames
+              };
+              
+              const params = new URLSearchParams({
+                action: 'updateEvent',
+                eventId: eventId,
+                eventData: JSON.stringify(updatedEventData)
+              });
+
+              await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              setEventData(updatedEventData);
+              setEditingTeamName(null);
+            } catch (err) {
+              console.error('Error updating team name:', err);
             }
           };
 
@@ -952,6 +997,35 @@
                       </div>
                     </div>
                     {isMarshall && !eventData?.started && (
+                      <div className="mb-6 bg-purple-900/40 p-4 rounded border border-purple-600">
+                        <h3 className="text-lg text-purple-300 mb-3 font-bold">⚙️ Timer Settings</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-purple-200 text-sm mb-2">Captain Choice Timer (seconds)</label>
+                            <input 
+                              type="number" 
+                              min="10" 
+                              max="300"
+                              value={captainChoiceTimerSetting}
+                              onChange={(e) => setCaptainChoiceTimerSetting(parseInt(e.target.value) || 45)}
+                              className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-purple-200 text-sm mb-2">Draft Timer (seconds)</label>
+                            <input 
+                              type="number" 
+                              min="10" 
+                              max="300"
+                              value={draftTimerSetting}
+                              onChange={(e) => setDraftTimerSetting(parseInt(e.target.value) || 60)}
+                              className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {isMarshall && !eventData?.started && (
                       <button onClick={startEvent} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
                         Start Event
                       </button>
@@ -1040,6 +1114,8 @@
 
           if (view === 'teamPicking') {
             const isCurrentCaptain = captains[pickingCaptain]?.name === characterName;
+            const isCaptain1 = captains[0]?.name === characterName;
+            const isCaptain2 = captains[1]?.name === characterName;
             
             return (
               <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
@@ -1083,13 +1159,41 @@
                     
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="bg-blue-900/60 p-4 rounded border-2 border-blue-500">
-                        <h3 className="text-xl text-blue-300 mb-3 flex items-center gap-2">
-                          <Shield className="w-5 h-5" />
-                          Team 1: {captains[0]?.name}
-                        </h3>
+                        {editingTeamName === 'captain1' && isCaptain1 ? (
+                          <div className="mb-3">
+                            <input
+                              type="text"
+                              value={teamNames.captain1}
+                              onChange={(e) => setTeamNames({ ...teamNames, captain1: e.target.value })}
+                              onBlur={() => updateTeamName('captain1', teamNames.captain1)}
+                              onKeyPress={(e) => e.key === 'Enter' && updateTeamName('captain1', teamNames.captain1)}
+                              className="w-full px-2 py-1 bg-black/60 border border-blue-400 rounded text-white text-lg"
+                              placeholder="Team name..."
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <h3 className="text-xl text-blue-300 mb-3 flex items-center gap-2">
+                            <Shield className="w-5 h-5" />
+                            {teamNames.captain1 || `Team 1: ${captains[0]?.name}`}
+                            {isCaptain1 && (
+                              <button 
+                                onClick={() => setEditingTeamName('captain1')}
+                                className="text-blue-400 hover:text-blue-300 ml-auto"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
+                          </h3>
+                        )}
                         <div className="space-y-2">
                           {teams.captain1.map((p, idx) => (
-                            <div key={idx} className="bg-black/60 p-2 rounded text-white flex justify-between items-center">
+                            <div 
+                              key={idx} 
+                              className={`bg-black/60 p-2 rounded text-white flex justify-between items-center transition-all ${
+                                justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
+                              }`}
+                            >
                               <span>{p.name}</span>
                               <div className="flex gap-1">{getRoleIcons(p)}</div>
                             </div>
@@ -1106,12 +1210,12 @@
                             {availablePlayers.map((p, idx) => (
                               <button 
                                 key={idx} 
-                                onClick={() => isCurrentCaptain ? pickPlayer(p) : null}
-                                disabled={!isCurrentCaptain}
+                                onClick={() => isCurrentCaptain && !isDrafting ? pickPlayer(p) : null}
+                                disabled={!isCurrentCaptain || isDrafting}
                                 className={`w-full p-2 rounded text-white flex justify-between items-center transition-colors ${
-                                  isCurrentCaptain 
+                                  isCurrentCaptain && !isDrafting
                                     ? 'bg-amber-600 hover:bg-amber-700 cursor-pointer' 
-                                    : 'bg-gray-700 cursor-not-allowed'
+                                    : 'bg-gray-700 cursor-not-allowed opacity-50'
                                 }`}
                               >
                                 <span>{p.name}</span>
@@ -1123,13 +1227,41 @@
                       </div>
                       
                       <div className="bg-red-900/60 p-4 rounded border-2 border-red-500">
-                        <h3 className="text-xl text-red-300 mb-3 flex items-center gap-2">
-                          <Shield className="w-5 h-5" />
-                          Team 2: {captains[1]?.name}
-                        </h3>
+                        {editingTeamName === 'captain2' && isCaptain2 ? (
+                          <div className="mb-3">
+                            <input
+                              type="text"
+                              value={teamNames.captain2}
+                              onChange={(e) => setTeamNames({ ...teamNames, captain2: e.target.value })}
+                              onBlur={() => updateTeamName('captain2', teamNames.captain2)}
+                              onKeyPress={(e) => e.key === 'Enter' && updateTeamName('captain2', teamNames.captain2)}
+                              className="w-full px-2 py-1 bg-black/60 border border-red-400 rounded text-white text-lg"
+                              placeholder="Team name..."
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <h3 className="text-xl text-red-300 mb-3 flex items-center gap-2">
+                            <Shield className="w-5 h-5" />
+                            {teamNames.captain2 || `Team 2: ${captains[1]?.name}`}
+                            {isCaptain2 && (
+                              <button 
+                                onClick={() => setEditingTeamName('captain2')}
+                                className="text-red-400 hover:text-red-300 ml-auto"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
+                          </h3>
+                        )}
                         <div className="space-y-2">
                           {teams.captain2.map((p, idx) => (
-                            <div key={idx} className="bg-black/60 p-2 rounded text-white flex justify-between items-center">
+                            <div 
+                              key={idx} 
+                              className={`bg-black/60 p-2 rounded text-white flex justify-between items-center transition-all ${
+                                justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
+                              }`}
+                            >
                               <span>{p.name}</span>
                               <div className="flex gap-1">{getRoleIcons(p)}</div>
                             </div>
@@ -1160,7 +1292,8 @@
                       <div className="bg-blue-900/60 p-6 rounded border-2 border-blue-500">
                         <h3 className="text-2xl text-blue-300 mb-4 flex items-center gap-2">
                           <Shield className="w-6 h-6" />
-                          Team 1: {captains[0]?.name}
+                          {eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`}
+                        </h3>
                         </h3>
                         <div className="space-y-2">
                           <div className="bg-blue-800/60 p-3 rounded text-white font-bold">
@@ -1177,7 +1310,8 @@
                       <div className="bg-red-900/60 p-6 rounded border-2 border-red-500">
                         <h3 className="text-2xl text-red-300 mb-4 flex items-center gap-2">
                           <Shield className="w-6 h-6" />
-                          Team 2: {captains[1]?.name}
+                          {eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`}
+                        </h3>
                         </h3>
                         <div className="space-y-2">
                           <div className="bg-red-800/60 p-3 rounded text-white font-bold">
