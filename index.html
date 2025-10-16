@@ -155,20 +155,16 @@
             const codeParam = urlParams.get('code');
             
             if (codeParam) {
-              // Handle Discord OAuth callback
               handleDiscordCallback(codeParam);
             } else if (eventParam) {
               setEventId(eventParam);
-              // Check if logged in before navigating
               const savedDiscord = localStorage.getItem('bearDiscordUser');
               if (savedDiscord) {
                 setView('join');
               }
-              // If not logged in, stay on home and they'll be prompted when clicking join
             }
           }, []);
 
-          // Store character name and Discord user in localStorage
           useEffect(() => {
             if (characterName) {
               try {
@@ -186,7 +182,6 @@
             }
           }, [characterName, discordUser]);
 
-          // Load character name and Discord user from localStorage on mount
           useEffect(() => {
             try {
               const savedName = localStorage.getItem('bearCharacterName');
@@ -201,7 +196,6 @@
               console.log('localStorage not available:', e);
             }
             
-            // Load leaderboard
             fetchLeaderboard();
           }, []);
 
@@ -260,10 +254,8 @@
               
               if (result.success) {
                 setDiscordUser(result.user);
-                // Clean URL
                 window.history.replaceState({}, document.title, window.location.pathname + (eventId ? `?event=${eventId}` : ''));
                 
-                // If there was an event ID, go to join view
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('event')) {
                   setView('join');
@@ -292,7 +284,6 @@
             }
           };
 
-          // Poll for updates when in lobby or during draft
           useEffect(() => {
             if ((view === 'lobby' || view === 'captainChoice' || view === 'teamPicking') && eventId) {
               const interval = setInterval(async () => {
@@ -300,37 +291,31 @@
                   const response = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
                   const result = await response.json();
                   if (result.success && result.eventData) {
-                    // Only update if data actually changed
                     const currentDataStr = JSON.stringify(eventData);
                     const newDataStr = JSON.stringify(result.eventData);
                     
                     if (currentDataStr !== newDataStr) {
                       setEventData(result.eventData);
                       
-                      // Sync draft state
                       if (result.eventData.started && result.eventData.captains) {
                         setCaptains(result.eventData.captains);
                         
-                        // Only update picker if it changed
                         if (result.eventData.currentPicker !== pickingCaptain) {
                           setPickingCaptain(result.eventData.currentPicker || 0);
                         }
                         
-                        // Only update teams if they changed
                         const currentTeamsStr = JSON.stringify(teams);
                         const newTeamsStr = JSON.stringify(result.eventData.teams);
                         if (currentTeamsStr !== newTeamsStr && result.eventData.teams) {
                           setTeams(result.eventData.teams);
                         }
                         
-                        // Only update available players if they changed
                         const currentAvailableStr = JSON.stringify(availablePlayers);
                         const newAvailableStr = JSON.stringify(result.eventData.availablePlayers);
                         if (currentAvailableStr !== newAvailableStr && result.eventData.availablePlayers) {
                           setAvailablePlayers(result.eventData.availablePlayers);
                         }
                         
-                        // Auto-transition views based on event state
                         if (view === 'lobby' && result.eventData.started) {
                           setView('captainChoice');
                         }
@@ -349,7 +334,7 @@
                 } catch (err) {
                   console.error('Error polling for updates:', err);
                 }
-              }, 3000); // Poll every 3 seconds (increased from 2 to reduce load)
+              }, 3000);
               
               return () => clearInterval(interval);
             }
@@ -375,7 +360,6 @@
             };
 
             try {
-              // Use GET request with parameters instead of POST for better compatibility
               const params = new URLSearchParams({
                 action: 'createEvent',
                 eventId: newEventId,
@@ -422,7 +406,6 @@
             };
 
             try {
-              // First, fetch the current event to verify it exists and is not locked
               const checkResponse = await fetch(`${SCRIPT_URL}?eventId=${eventId}`);
               const checkResult = await checkResponse.json();
               
@@ -432,14 +415,12 @@
                 return;
               }
 
-              // Check if event is locked (started)
               if (checkResult.eventData.started) {
                 setError('This event has already started and is locked.');
                 setLoading(false);
                 return;
               }
 
-              // Check for duplicate usernames
               const existingNames = checkResult.eventData.participants.map(p => p.name.toLowerCase());
               if (existingNames.includes(characterName.toLowerCase())) {
                 setError('A player with this name has already joined. Please choose a different character name.');
@@ -447,7 +428,6 @@
                 return;
               }
               
-              // Now add the participant
               const params = new URLSearchParams({
                 action: 'addParticipant',
                 eventId: eventId,
@@ -490,8 +470,8 @@
             setSpinningWheel(true);
             
             let count = 0;
-            const spinDuration = 3000; // 3 seconds
-            const intervalTime = 100; // Change name every 100ms
+            const spinDuration = 3000;
+            const intervalTime = 100;
             const totalSpins = spinDuration / intervalTime;
             
             const interval = setInterval(() => {
@@ -506,7 +486,7 @@
                 setTimeout(() => {
                   setSpinningWheel(false);
                   callback(winner);
-                }, 1000); // Show winner for 1 second
+                }, 1000);
               }
             }, intervalTime);
           };
@@ -519,11 +499,9 @@
               return;
             }
 
-            // First wheel spin for captain 1
             animateWheelSpin(potentialCaptains, (captain1) => {
               const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
               
-              // Second wheel spin for captain 2
               setTimeout(() => {
                 animateWheelSpin(remainingCaptains, async (captain2) => {
                   const firstPicker = Math.random() < 0.5 ? 0 : 1;
@@ -533,7 +511,6 @@
                     p => p.name !== captain1.name && p.name !== captain2.name
                   );
 
-                  // Update event in Google Sheets with draft status
                   const updatedEventData = {
                     ...eventData,
                     started: true,
@@ -563,18 +540,16 @@
                     setError('Error starting event: ' + err.message);
                   }
                 });
-              }, 1500); // Pause between spins
+              }, 1500);
             });
           };
 
           const deferFirstPick = async () => {
             setFirstPickerDeferred(true);
             
-            // Swap who picks first in the draft
             const newCurrentPicker = pickingCaptain === 0 ? 1 : 0;
             setPickingCaptain(newCurrentPicker);
             
-            // Update Google Sheets
             const updatedEventData = {
               ...eventData,
               deferredFirstPick: true,
@@ -602,13 +577,11 @@
           };
 
           const handleCaptainTimeout = async () => {
-            // First captain timed out, ask second captain
             if (pickingCaptain === eventData.firstPicker) {
               const otherCaptain = pickingCaptain === 0 ? 1 : 0;
               setPickingCaptain(otherCaptain);
               setCaptainChoiceTimer(captainChoiceTimerSetting);
               
-              // Update event data
               const updatedEventData = {
                 ...eventData,
                 currentPicker: otherCaptain,
@@ -627,7 +600,6 @@
                 console.error('Error updating after timeout:', err);
               }
             } else {
-              // Second captain also timed out, randomize
               const randomDefer = Math.random() < 0.5;
               if (randomDefer) {
                 await deferFirstPick();
@@ -640,14 +612,12 @@
           const handleDraftTimeout = async () => {
             if (availablePlayers.length > 0 && !isAutoPicking) {
               setIsAutoPicking(true);
-              // Auto-pick random player
               const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
               await pickPlayer(randomPlayer);
               setTimeout(() => setIsAutoPicking(false), 1000);
             }
           };
 
-          // Captain choice timer
           useEffect(() => {
             if (view === 'captainChoice' && captainChoiceTimer > 0) {
               const timer = setTimeout(() => {
@@ -659,7 +629,6 @@
             }
           }, [view, captainChoiceTimer]);
 
-          // Draft timer
           useEffect(() => {
             if (view === 'teamPicking' && availablePlayers.length > 0 && draftTimer > 0 && !isAutoPicking) {
               const timer = setTimeout(() => {
@@ -671,15 +640,13 @@
             }
           }, [view, draftTimer, availablePlayers, isAutoPicking]);
 
-          // Reset draft timer when picker changes
           useEffect(() => {
             if (view === 'teamPicking' && !isAutoPicking) {
               setDraftTimer(draftTimerSetting);
             }
-          }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length, draftTimerSetting]); // Reset when any team changes
+          }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length, draftTimerSetting]);
 
           const pickPlayer = async (player) => {
-            // Prevent double-clicking
             if (isDrafting) {
               return;
             }
@@ -695,1228 +662,11 @@
             
             const newAvailablePlayers = availablePlayers.filter(p => p.name !== player.name);
             
-            // Update local state immediately for smooth UI
             setTeams(newTeams);
             setAvailablePlayers(newAvailablePlayers);
-            setDraftTimer(draftTimerSetting); // Reset to setting
-            setJustDrafted(player.name); // Highlight drafted player
-            setTimeout(() => setJustDrafted(null), 2000); // Clear after 2 seconds
-            
-            // Play draft sound
-            try {
-              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
-              audio.volume = 0.3;
-              audio.play().catch(e => console.log('Audio play failed:', e));
-            } catch (e) {
-              console.log('Audio creation failed:', e);
-            }
-            
-            // Update Google Sheets in background
-            const updatedEventData = {
-              ...eventData,
-              teams: newTeams,
-              availablePlayers: newAvailablePlayers,
-              currentPicker: pickingCaptain === 0 ? 1 : 0,
-              teamNames: teamNames
-            };
-
-            try {
-              const params = new URLSearchParams({
-                action: 'updateEvent',
-                eventId: eventId,
-                eventData: JSON.stringify(updatedEventData)
-              });
-
-              await fetch(`${SCRIPT_URL}?${params.toString()}`);
-              setEventData(updatedEventData);
-            } catch (err) {
-              console.error('Error updating teams:', err);
-            }
-            
-            // Allow drafting again after a short delay
-            setTimeout(() => {
-              setIsDrafting(false);
-            }, 500);
-            
-            // Check if all players are picked
-            if (newAvailablePlayers.length === 1) {
-              const otherTeamKey = pickingCaptain === 0 ? 'captain2' : 'captain1';
-              const finalTeams = {
-                ...newTeams,
-                [otherTeamKey]: [...newTeams[otherTeamKey], newAvailablePlayers[0]]
-              };
-              
-              setTeams(finalTeams);
-              setAvailablePlayers([]);
-              
-              // Play final sound
-              try {
-                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
-                audio.volume = 0.5;
-                audio.play().catch(e => console.log('Audio play failed:', e));
-              } catch (e) {
-                console.log('Audio creation failed:', e);
-              }
-              
-              // Update Google Sheets with final teams
-              const finalEventData = {
-                ...eventData,
-                teams: finalTeams,
-                availablePlayers: [],
-                completed: true,
-                teamNames: teamNames
-              };
-
-              try {
-                const params = new URLSearchParams({
-                  action: 'updateEvent',
-                  eventId: eventId,
-                  eventData: JSON.stringify(finalEventData)
-                });
-
-                await fetch(`${SCRIPT_URL}?${params.toString()}`);
-              } catch (err) {
-                console.error('Error finalizing teams:', err);
-              }
-              
-              setView('complete');
-            } else {
-              setPickingCaptain(prev => prev === 0 ? 1 : 0);
-            }
-          };
-
-          const addManualPlayer = async () => {
-            if (!newPlayerName.trim()) {
-              setError('Player name is required!');
-              return;
-            }
-
-            // Check for duplicate names
-            const existingNames = eventData.participants.map(p => p.name.toLowerCase());
-            if (existingNames.includes(newPlayerName.toLowerCase())) {
-              setError('A player with this name already exists!');
-              return;
-            }
-
-            setLoading(true);
-            setError('');
-
-            const manualPlayer = {
-              name: newPlayerName,
-              discordUser: {
-                id: `manual_${Date.now()}`,
-                username: `${newPlayerName} (Manual)`
-              },
-              wantsCaptain: newPlayerCaptain,
-              lockpicker: newPlayerLockpicker,
-              healer: newPlayerHealer,
-              bard: newPlayerBard,
-              isMarshall: false,
-              isManual: true
-            };
-
-            try {
-              const params = new URLSearchParams({
-                action: 'addParticipant',
-                eventId: eventId,
-                participantData: JSON.stringify(manualPlayer)
-              });
-
-              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
-              const result = await response.json();
-
-              if (result.success) {
-                setEventData(result.eventData);
-                setShowAddPlayer(false);
-                setNewPlayerName('');
-                setNewPlayerCaptain(false);
-                setNewPlayerLockpicker(false);
-                setNewPlayerHealer(false);
-                setNewPlayerBard(false);
-              } else {
-                setError('Failed to add player: ' + result.error);
-              }
-            } catch (err) {
-              setError('Error adding player: ' + err.message);
-            } finally {
-              setLoading(false);
-            }
-          };
-
-          const removePlayer = async (playerIndex) => {
-            if (!confirm('Are you sure you want to kick this player?')) {
-              return;
-            }
-
-            setLoading(true);
-            setError('');
-
-            try {
-              const updatedEventData = { ...eventData };
-              updatedEventData.participants.splice(playerIndex, 1);
-
-              const params = new URLSearchParams({
-                action: 'updateEvent',
-                eventId: eventId,
-                eventData: JSON.stringify(updatedEventData)
-              });
-
-              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
-              const result = await response.json();
-
-              if (result.success) {
-                setEventData(result.eventData);
-              } else {
-                setError('Failed to remove player: ' + result.error);
-              }
-            } catch (err) {
-              setError('Error removing player: ' + err.message);
-              console.error('Remove player error:', err);
-            } finally {
-              setLoading(false);
-            }
-          };
-
-          const updatePlayerRoles = async (playerIndex, updates) => {
-            setLoading(true);
-            setError('');
-
-            try {
-              const updatedEventData = { ...eventData };
-              updatedEventData.participants[playerIndex] = {
-                ...updatedEventData.participants[playerIndex],
-                ...updates
-              };
-
-              const params = new URLSearchParams({
-                action: 'updateEvent',
-                eventId: eventId,
-                eventData: JSON.stringify(updatedEventData)
-              });
-
-              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
-              const result = await response.json();
-
-              if (result.success) {
-                setEventData(result.eventData);
-                setEditingPlayer(null);
-                setEditingRoles({});
-                setTempRoles({});
-              } else {
-                setError('Failed to update player: ' + result.error);
-              }
-            } catch (err) {
-              setError('Error updating player: ' + err.message);
-              console.error('Update player error:', err);
-            } finally {
-              setLoading(false);
-            }
-          };
-
-          const startEditingRoles = (playerIndex, participant) => {
-            setEditingPlayer(playerIndex);
-            setTempRoles({
-              wantsCaptain: participant.wantsCaptain,
-              lockpicker: participant.lockpicker,
-              healer: participant.healer,
-              bard: participant.bard
-            });
-          };
-
-          const updateTeamName = async (teamKey) => {
-            const newName = tempTeamName;
-            const updatedTeamNames = { ...teamNames, [teamKey]: newName };
-            setTeamNames(updatedTeamNames);
+            setDraftTimer(draftTimerSetting);
+            setJustDrafted(player.name);
+            setTimeout(() => setJustDrafted(null), 2000);
             
             try {
-              const updatedEventData = {
-                ...eventData,
-                teamNames: updatedTeamNames
-              };
-              
-              const params = new URLSearchParams({
-                action: 'updateEvent',
-                eventId: eventId,
-                eventData: JSON.stringify(updatedEventData)
-              });
-
-              await fetch(`${SCRIPT_URL}?${params.toString()}`);
-              setEventData(updatedEventData);
-              setEditingTeamName(null);
-              setTempTeamName('');
-            } catch (err) {
-              console.error('Error updating team name:', err);
-            }
-          };
-
-          const startEditingTeamName = (teamKey) => {
-            setEditingTeamName(teamKey);
-            setTempTeamName(teamNames[teamKey] || '');
-          };
-
-          const pickMap = async (map) => {
-            const teamKey = currentMapPicker === 0 ? 'captain1' : 'captain2';
-            
-            const newSelectedMaps = [...selectedMaps, { ...map, pickedBy: teamKey }];
-            setSelectedMaps(newSelectedMaps);
-            
-            const newAvailableMaps = parsedMaps.filter(m => m.id !== map.id);
-            setParsedMaps(newAvailableMaps);
-            
-            // Play selection sound
-            try {
-              const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
-              audio.volume = 0.3;
-              audio.play().catch(e => console.log('Audio play failed:', e));
-            } catch (e) {
-              console.log('Audio creation failed:', e);
-            }
-            
-            // Update event data
-            const updatedEventData = {
-              ...eventData,
-              selectedMaps: newSelectedMaps,
-              maps: newAvailableMaps,
-              currentMapPicker: currentMapPicker === 0 ? 1 : 0
-            };
-            
-            try {
-              const params = new URLSearchParams({
-                action: 'updateEvent',
-                eventId: eventId,
-                eventData: JSON.stringify(updatedEventData)
-              });
-              
-              await fetch(`${SCRIPT_URL}?${params.toString()}`);
-            } catch (err) {
-              console.error('Error updating maps:', err);
-            }
-            
-            // Check if all maps picked
-            if (newAvailableMaps.length === 0) {
-              setView('complete');
-            } else {
-              setCurrentMapPicker(prev => prev === 0 ? 1 : 0);
-            }
-          };
-
-          const getRoleIcons = (participant) => {
-            const icons = [];
-            if (participant.lockpicker) icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
-            if (participant.healer) icons.push(<Heart key="heart" className="w-4 h-4 text-red-500" />);
-            if (participant.bard) icons.push(<Music key="music" className="w-4 h-4 text-purple-500" />);
-            return icons;
-          };
-
-          if (view === 'home') {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-2xl mx-auto">
-                  {characterName && (
-                    <div className="text-center mb-4">
-                      <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                        Character: {characterName}
-                      </span>
-                    </div>
-                  )}
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <div className="text-center mb-8">
-                      <h1 className="text-5xl font-bold text-amber-400 mb-2">BEAR GUILD</h1>
-                      <h2 className="text-2xl text-orange-300">Treasure Map Team Picker</h2>
-                    </div>
-                    
-                    {error && (
-                      <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
-                        {error}
-                      </div>
-                    )}
-                    
-                    <div className="space-y-4">
-                      <button onClick={() => setView('create')} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
-                        Create New Event
-                      </button>
-                      <button onClick={() => setView('join')} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
-                        Join Existing Event
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.0.0
-                </div>
-              </div>
-            );
-          }
-
-          if (view === 'create') {
-            // Redirect to home if not logged in
-            if (!discordUser) {
-              return (
-                <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600 text-center">
-                      <h2 className="text-3xl font-bold text-amber-400 mb-6">Authentication Required</h2>
-                      <p className="text-orange-300 mb-6">You must log in with Discord to create an event.</p>
-                      <button
-                        onClick={loginWithDiscord}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl flex items-center justify-center gap-3 mx-auto"
-                      >
-                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                        </svg>
-                        Login with Discord
-                      </button>
-                      <button
-                        onClick={() => setView('home')}
-                        className="mt-4 text-orange-300 hover:text-orange-400 underline"
-                      >
-                        Back to Home
-                      </button>
-                    </div>
-                  </div>
-                  <div className="text-center mt-4 text-amber-600 text-sm">
-                    v1.1.0 - Discord Integration
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-2xl mx-auto">
-                  <div className="text-center mb-4">
-                    <span className="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 inline-flex">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                      </svg>
-                      {discordUser.username}
-                    </span>
-                  </div>
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-3xl font-bold text-amber-400 mb-6">Create Event</h2>
-                    
-                    {error && (
-                      <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
-                        {error}
-                      </div>
-                    )}
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-orange-300 mb-2">Your Character Name</label>
-                        <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full px-4 py-2 bg-black/60 border border-amber-600 rounded text-white" placeholder="Enter your name" />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="block text-orange-300 mb-2">Your Roles</label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={wantsCaptain} onChange={(e) => setWantsCaptain(e.target.checked)} className="w-5 h-5" />
-                          <Shield className="w-5 h-5" />
-                          I want to be a Captain
-                        </label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={isLockpicker} onChange={(e) => setIsLockpicker(e.target.checked)} className="w-5 h-5" />
-                          <Key className="w-5 h-5 text-yellow-500" />
-                          Lockpicker
-                        </label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={isHealer} onChange={(e) => setIsHealer(e.target.checked)} className="w-5 h-5" />
-                          <Heart className="w-5 h-5 text-red-500" />
-                          Healer
-                        </label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={isBard} onChange={(e) => setIsBard(e.target.checked)} className="w-5 h-5" />
-                          <Music className="w-5 h-5 text-purple-500" />
-                          Bard
-                        </label>
-                      </div>
-                      
-                      <div className="flex gap-4">
-                        <button onClick={createEvent} disabled={!characterName.trim() || loading} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                          {loading ? 'Creating...' : 'Create Event'}
-                        </button>
-                        <button onClick={() => setView('home')} disabled={loading} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          if (view === 'join') {
-            // Redirect to login if not logged in
-            if (!discordUser) {
-              return (
-                <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600 text-center">
-                      <h2 className="text-3xl font-bold text-amber-400 mb-6">Authentication Required</h2>
-                      <p className="text-orange-300 mb-6">You must log in with Discord to join an event.</p>
-                      <button
-                        onClick={loginWithDiscord}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl flex items-center justify-center gap-3 mx-auto"
-                      >
-                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                        </svg>
-                        Login with Discord
-                      </button>
-                      <button
-                        onClick={() => setView('home')}
-                        className="mt-4 text-orange-300 hover:text-orange-400 underline"
-                      >
-                        Back to Home
-                      </button>
-                    </div>
-                  </div>
-                  <div className="text-center mt-4 text-amber-600 text-sm">
-                    v1.1.0 - Discord Integration
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-2xl mx-auto">
-                  <div className="text-center mb-4">
-                    <span className="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 inline-flex">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                      </svg>
-                      {discordUser.username}
-                    </span>
-                  </div>
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-3xl font-bold text-amber-400 mb-6">Join Event</h2>
-                    
-                    {error && (
-                      <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
-                        {error}
-                      </div>
-                    )}
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-orange-300 mb-2">Event ID</label>
-                        <input type="text" value={eventId} onChange={(e) => setEventId(e.target.value.toUpperCase())} className="w-full px-4 py-2 bg-black/60 border border-amber-600 rounded text-white uppercase" placeholder="Enter event ID" />
-                      </div>
-                      <div>
-                        <label className="block text-orange-300 mb-2">Your Character Name</label>
-                        <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full px-4 py-2 bg-black/60 border border-amber-600 rounded text-white" placeholder="Enter your name" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={wantsCaptain} onChange={(e) => setWantsCaptain(e.target.checked)} className="w-5 h-5" />
-                          <Shield className="w-5 h-5" />
-                          I want to be a Captain
-                        </label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={isLockpicker} onChange={(e) => setIsLockpicker(e.target.checked)} className="w-5 h-5" />
-                          <Key className="w-5 h-5 text-yellow-500" />
-                          Lockpicker
-                        </label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={isHealer} onChange={(e) => setIsHealer(e.target.checked)} className="w-5 h-5" />
-                          <Heart className="w-5 h-5 text-red-500" />
-                          Healer
-                        </label>
-                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                          <input type="checkbox" checked={isBard} onChange={(e) => setIsBard(e.target.checked)} className="w-5 h-5" />
-                          <Music className="w-5 h-5 text-purple-500" />
-                          Bard
-                        </label>
-                      </div>
-                      <div className="flex gap-4">
-                        <button onClick={joinEvent} disabled={!characterName.trim() || !eventId.trim() || loading} className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                          {loading ? 'Joining...' : 'Join Event'}
-                        </button>
-                        <button onClick={() => setView('home')} disabled={loading} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.0.0
-                </div>
-              </div>
-            );
-          }
-
-          if (view === 'lobby') {
-            const isMarshall = eventData?.participants?.[0]?.name === characterName;
-            
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-4xl mx-auto">
-                  {characterName && (
-                    <div className="text-center mb-4">
-                      <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                        Character: {characterName}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Wheel Spin Modal */}
-                  {spinningWheel && (
-                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                      <div className="bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-12 rounded-lg border-4 border-amber-600 text-center">
-                        <h2 className="text-4xl font-bold text-amber-400 mb-8">Spinning the Wheel!</h2>
-                        <div className="w-64 h-64 mx-auto mb-8 bg-amber-600 rounded-full flex items-center justify-center border-8 border-amber-400 animate-spin">
-                          <div className="bg-black/60 w-48 h-48 rounded-full flex items-center justify-center">
-                            <span className="text-white text-3xl font-bold">{currentWheelName}</span>
-                          </div>
-                        </div>
-                        <p className="text-orange-300 text-xl">Selecting Captain...</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-3xl font-bold text-amber-400">Event Lobby</h2>
-                      <div className="text-right">
-                        <div className="text-orange-300 text-sm">Event ID</div>
-                        <div className="text-2xl font-bold text-white">{eventId}</div>
-                        {eventData?.started && (
-                          <div className="text-red-400 text-sm mt-1">🔒 LOCKED</div>
-                        )}
-                      </div>
-                    </div>
-                    <button onClick={copyEventLink} className="w-full mb-6 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
-                      {linkCopied ? (<><Check className="w-5 h-5" />Link Copied!</>) : (<><Copy className="w-5 h-5" />Copy Event Link</>)}
-                    </button>
-                    <div className="mb-6">
-                      <h3 className="text-xl text-orange-300 mb-4 flex items-center gap-2">
-                        <Users className="w-6 h-6" />
-                        Participants ({eventData?.participants?.length || 0})
-                      </h3>
-                      <div className="space-y-2">
-                        {eventData?.participants?.map((p, idx) => (
-                          <div key={idx} className="bg-black/60 p-4 rounded border border-amber-600">
-                            {editingPlayer === idx ? (
-                              <div className="space-y-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-white font-bold">{p.name}</span>
-                                  <button onClick={() => { setEditingPlayer(null); setTempRoles({}); }} className="text-gray-400 hover:text-white">Cancel</button>
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                                    <input type="checkbox" checked={tempRoles.wantsCaptain} onChange={(e) => setTempRoles({ ...tempRoles, wantsCaptain: e.target.checked })} className="w-5 h-5" />
-                                    <Shield className="w-5 h-5" />
-                                    Wants to be Captain
-                                  </label>
-                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                                    <input type="checkbox" checked={tempRoles.lockpicker} onChange={(e) => setTempRoles({ ...tempRoles, lockpicker: e.target.checked })} className="w-5 h-5" />
-                                    <Key className="w-5 h-5 text-yellow-500" />
-                                    Lockpicker
-                                  </label>
-                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                                    <input type="checkbox" checked={tempRoles.healer} onChange={(e) => setTempRoles({ ...tempRoles, healer: e.target.checked })} className="w-5 h-5" />
-                                    <Heart className="w-5 h-5 text-red-500" />
-                                    Healer
-                                  </label>
-                                  <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
-                                    <input type="checkbox" checked={tempRoles.bard} onChange={(e) => setTempRoles({ ...tempRoles, bard: e.target.checked })} className="w-5 h-5" />
-                                    <Music className="w-5 h-5 text-purple-500" />
-                                    Bard
-                                  </label>
-                                </div>
-                                <button 
-                                  onClick={() => updatePlayerRoles(idx, tempRoles)}
-                                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
-                                >
-                                  Save Changes
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                  <div>
-                                    <span className="text-white font-bold">{p.name}</span>
-                                    {p.discordUser && (
-                                      <span className="text-indigo-300 text-sm ml-2">({p.discordUser.username})</span>
-                                    )}
-                                  </div>
-                                  {p.isMarshall && <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">MARSHALL</span>}
-                                  {p.wantsCaptain && <span className="bg-amber-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1"><Shield className="w-3 h-3" />CAPTAIN</span>}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="flex gap-2">{getRoleIcons(p)}</div>
-                                  {isMarshall && (
-                                    <div className="flex gap-2">
-                                      <button onClick={() => startEditingRoles(idx, p)} className="text-orange-300 hover:text-orange-400 p-1" title="Edit roles">
-                                        <Edit className="w-4 h-4" />
-                                      </button>
-                                      {!p.isMarshall && (
-                                        <button onClick={() => removePlayer(idx)} className="text-red-400 hover:text-red-500 p-1" title="Kick player">
-                                          <Trash className="w-4 h-4" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {isMarshall && !eventData?.started && (
-                      <>
-                        <div className="mb-6 bg-purple-900/40 p-4 rounded border border-purple-600">
-                          <h3 className="text-lg text-purple-300 mb-3 font-bold">⚙️ Timer Settings</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-purple-200 text-sm mb-2">
-                                Captain Choice Timer (10-300s)
-                              </label>
-                              <input 
-                                type="number" 
-                                min="10" 
-                                max="300"
-                                value={captainChoiceTimerSetting}
-                                onChange={(e) => setCaptainChoiceTimerSetting(parseInt(e.target.value) || 45)}
-                                className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
-                              />
-                              <p className="text-purple-300 text-xs mt-1">Currently: {captainChoiceTimerSetting}s</p>
-                            </div>
-                            <div>
-                              <label className="block text-purple-200 text-sm mb-2">
-                                Draft Timer (10-300s)
-                              </label>
-                              <input 
-                                type="number" 
-                                min="10" 
-                                max="300"
-                                value={draftTimerSetting}
-                                onChange={(e) => setDraftTimerSetting(parseInt(e.target.value) || 60)}
-                                className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
-                              />
-                              <p className="text-purple-300 text-xs mt-1">Currently: {draftTimerSetting}s</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-6 bg-orange-900/40 p-4 rounded border border-orange-600">
-                          <h3 className="text-lg text-orange-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-orange-200 text-sm mb-2">
-                                Total Maps (e.g., 10+10=20)
-                              </label>
-                              <input 
-                                type="number" 
-                                min="1" 
-                                max="100"
-                                value={totalMaps}
-                                onChange={(e) => setTotalMaps(parseInt(e.target.value) || 20)}
-                                className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white"
-                              />
-                              <p className="text-orange-300 text-xs mt-1">Total treasure maps to complete</p>
-                            </div>
-                            <div>
-                              <label className="block text-orange-200 text-sm mb-2">
-                                Map Coordinates (Optional)
-                              </label>
-                              <textarea 
-                                value={mapCoords}
-                                onChange={(e) => setMapCoords(e.target.value)}
-                                placeholder="1863,1991|2456,1234|3789,2456"
-                                className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white h-24 font-mono text-sm"
-                              />
-                              <p className="text-orange-300 text-xs mt-1">
-                                Format: XXXX,YYYY|XXXX,YYYY|XXXX,YYYY (separated by |)
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    
-                    {isMarshall && !eventData?.started && (
-                      <button onClick={startEvent} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
-                        Start Event
-                      </button>
-                    )}
-                    {eventData?.started && (
-                      <div className="bg-gray-900/60 p-4 rounded border-2 border-gray-500 text-center">
-                        <p className="text-gray-300 text-lg">Event has started! Selecting captains...</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.0.0
-                </div>
-              </div>
-            );
-          }
-
-          // Captain Choice View - First picker decides to pick first or defer
-          if (view === 'captainChoice') {
-            const isFirstCaptain = captains[pickingCaptain]?.name === characterName;
-            
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-4xl mx-auto">
-                  {characterName && (
-                    <div className="text-center mb-4">
-                      <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                        Character: {characterName}
-                      </span>
-                    </div>
-                  )}
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-4xl font-bold text-amber-400 mb-8 text-center">Captains Selected!</h2>
-                    
-                    <div className="grid grid-cols-2 gap-8 mb-8">
-                      <div className="bg-blue-900/60 p-6 rounded border-2 border-blue-500 text-center">
-                        <Shield className="w-16 h-16 mx-auto mb-4 text-blue-300" />
-                        <h3 className="text-2xl text-blue-300 font-bold">{captains[0]?.name}</h3>
-                        <p className="text-blue-200 mt-2">Team 1 Captain</p>
-                      </div>
-                      
-                      <div className="bg-red-900/60 p-6 rounded border-2 border-red-500 text-center">
-                        <Shield className="w-16 h-16 mx-auto mb-4 text-red-300" />
-                        <h3 className="text-2xl text-red-300 font-bold">{captains[1]?.name}</h3>
-                        <p className="text-red-200 mt-2">Team 2 Captain</p>
-                      </div>
-                    </div>
-                    
-                    {isFirstCaptain ? (
-                      <div className="bg-green-900/60 p-8 rounded border-2 border-green-500">
-                        <div className="text-center mb-4">
-                          <div className="text-6xl font-bold text-yellow-400 mb-2">{captainChoiceTimer}</div>
-                          <p className="text-yellow-200">seconds remaining</p>
-                        </div>
-                        <h3 className="text-3xl text-green-300 font-bold mb-4 text-center">You Pick First!</h3>
-                        <p className="text-green-200 text-center mb-6">
-                          You can pick your team first, or defer to pick the first treasure map later.
-                        </p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <button 
-                            onClick={startDrafting}
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors"
-                          >
-                            Pick Team First
-                          </button>
-                          <button 
-                            onClick={deferFirstPick}
-                            className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-6 rounded-lg transition-colors"
-                          >
-                            Defer (Pick Map First Later)
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-gray-900/60 p-8 rounded border-2 border-gray-500 text-center">
-                        <div className="text-6xl font-bold text-yellow-400 mb-4">{captainChoiceTimer}</div>
-                        <h3 className="text-2xl text-gray-300 mb-4">Waiting for {captains[pickingCaptain]?.name}</h3>
-                        <p className="text-gray-400">
-                          {captains[pickingCaptain]?.name} is deciding whether to pick their team first or defer...
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.0.0
-                </div>
-              </div>
-            );
-          }
-
-          if (view === 'teamPicking') {
-            const isCurrentCaptain = captains[pickingCaptain]?.name === characterName;
-            const isCaptain1 = captains[0]?.name === characterName;
-            const isCaptain2 = captains[1]?.name === characterName;
-            const isCaptain = isCaptain1 || isCaptain2;
-            
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-6xl mx-auto">
-                  {characterName && (
-                    <div className="text-center mb-4">
-                      <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                        Character: {characterName}
-                      </span>
-                    </div>
-                  )}
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-3xl font-bold text-amber-400 mb-6 text-center">Team Selection</h2>
-                    
-                    {availablePlayers.length > 0 && (
-                      <div className="text-center mb-4">
-                        <div className={`inline-block px-6 py-3 rounded-lg ${draftTimer <= 10 ? 'bg-red-600 animate-pulse' : 'bg-yellow-600'}`}>
-                          <span className="text-white text-2xl font-bold">{draftTimer}s</span>
-                          <span className={`ml-2 ${draftTimer <= 10 ? 'text-red-200' : 'text-yellow-200'}`}>to pick</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {isAutoPicking && (
-                      <div className="bg-red-600/80 p-4 rounded border-2 border-red-400 mb-6 text-center">
-                        <p className="text-white text-xl font-bold">⏰ Time's up! Auto-picking random player...</p>
-                      </div>
-                    )}
-                    
-                    {isCurrentCaptain && availablePlayers.length > 0 && (
-                      <div className="bg-green-900/60 p-4 rounded border-2 border-green-500 mb-6 text-center">
-                        <p className="text-green-200 text-xl font-bold">It's your turn to pick!</p>
-                      </div>
-                    )}
-                    
-                    {!isCurrentCaptain && availablePlayers.length > 0 && (
-                      <div className="bg-gray-900/60 p-4 rounded border-2 border-gray-500 mb-6 text-center">
-                        <p className="text-gray-300 text-xl">Waiting for {captains[pickingCaptain]?.name} to pick...</p>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="bg-blue-900/60 p-4 rounded border-2 border-blue-500">
-                        {editingTeamName === 'captain1' && isCaptain1 ? (
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              value={tempTeamName}
-                              onChange={(e) => setTempTeamName(e.target.value)}
-                              className="w-full px-2 py-1 mb-2 bg-black/60 border border-blue-400 rounded text-white text-lg"
-                              placeholder="Team name..."
-                              autoFocus
-                            />
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={() => updateTeamName('captain1')}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
-                              >
-                                Save
-                              </button>
-                              <button 
-                                onClick={() => { setEditingTeamName(null); setTempTeamName(''); }}
-                                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded text-sm"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <h3 className="text-xl text-blue-300 mb-3 flex items-center gap-2">
-                            <Shield className="w-5 h-5" />
-                            {teamNames.captain1 || `Team 1: ${captains[0]?.name}`}
-                            {isCaptain1 && (
-                              <button 
-                                onClick={() => startEditingTeamName('captain1')}
-                                className="text-blue-400 hover:text-blue-300 ml-auto"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            )}
-                          </h3>
-                        )}
-                        <div className="space-y-2">
-                          <div className="bg-blue-800/60 p-2 rounded text-white font-bold flex items-center gap-2">
-                            <Shield className="w-4 h-4" />
-                            {captains[0]?.name} (Captain)
-                          </div>
-                          {teams.captain1.map((p, idx) => (
-                            <div 
-                              key={idx} 
-                              className={`bg-black/60 p-2 rounded text-white flex justify-between items-center transition-all ${
-                                justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
-                              }`}
-                            >
-                              <span>{p.name}</span>
-                              <div className="flex gap-1">{getRoleIcons(p)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-black/60 p-4 rounded border-2 border-amber-600">
-                        <h3 className="text-xl text-orange-300 mb-3 text-center">Available Players</h3>
-                        {availablePlayers.length === 0 ? (
-                          <div className="text-center text-gray-400">All picked!</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {availablePlayers.map((p, idx) => (
-                              <button 
-                                key={idx} 
-                                onClick={() => isCurrentCaptain && !isDrafting ? pickPlayer(p) : null}
-                                disabled={!isCurrentCaptain || isDrafting}
-                                className={`w-full p-2 rounded text-white flex justify-between items-center transition-colors ${
-                                  isCurrentCaptain && !isDrafting
-                                    ? 'bg-amber-600 hover:bg-amber-700 cursor-pointer' 
-                                    : 'bg-gray-700 cursor-not-allowed opacity-50'
-                                }`}
-                              >
-                                <span>{p.name}</span>
-                                <div className="flex gap-1">{getRoleIcons(p)}</div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="bg-red-900/60 p-4 rounded border-2 border-red-500">
-                        {editingTeamName === 'captain2' && isCaptain2 ? (
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              value={tempTeamName}
-                              onChange={(e) => setTempTeamName(e.target.value)}
-                              className="w-full px-2 py-1 mb-2 bg-black/60 border border-red-400 rounded text-white text-lg"
-                              placeholder="Team name..."
-                              autoFocus
-                            />
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={() => updateTeamName('captain2')}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
-                              >
-                                Save
-                              </button>
-                              <button 
-                                onClick={() => { setEditingTeamName(null); setTempTeamName(''); }}
-                                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded text-sm"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <h3 className="text-xl text-red-300 mb-3 flex items-center gap-2">
-                            <Shield className="w-5 h-5" />
-                            {teamNames.captain2 || `Team 2: ${captains[1]?.name}`}
-                            {isCaptain2 && (
-                              <button 
-                                onClick={() => startEditingTeamName('captain2')}
-                                className="text-red-400 hover:text-red-300 ml-auto"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            )}
-                          </h3>
-                        )}
-                        <div className="space-y-2">
-                          <div className="bg-red-800/60 p-2 rounded text-white font-bold flex items-center gap-2">
-                            <Shield className="w-4 h-4" />
-                            {captains[1]?.name} (Captain)
-                          </div>
-                          {teams.captain2.map((p, idx) => (
-                            <div 
-                              key={idx} 
-                              className={`bg-black/60 p-2 rounded text-white flex justify-between items-center transition-all ${
-                                justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
-                              }`}
-                            >
-                              <span>{p.name}</span>
-                              <div className="flex gap-1">{getRoleIcons(p)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.0.0
-                </div>
-              </div>
-            );
-          }
-
-          if (view === 'mapPicking') {
-            const isCurrentCaptain = captains[currentMapPicker]?.name === characterName;
-            
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-6xl mx-auto">
-                  {characterName && (
-                    <div className="text-center mb-4">
-                      <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                        Character: {characterName}
-                      </span>
-                    </div>
-                  )}
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-3xl font-bold text-amber-400 mb-6 text-center">🗺️ Treasure Map Selection</h2>
-                    
-                    {isCurrentCaptain ? (
-                      <div className="bg-green-900/60 p-4 rounded border-2 border-green-500 mb-6 text-center">
-                        <p className="text-green-200 text-xl font-bold">It's your turn to pick a map!</p>
-                      </div>
-                    ) : (
-                      <div className="bg-gray-900/60 p-4 rounded border-2 border-gray-500 mb-6 text-center">
-                        <p className="text-gray-300 text-xl">Waiting for {captains[currentMapPicker]?.name} to pick...</p>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="bg-blue-900/60 p-4 rounded border-2 border-blue-500">
-                        <h3 className="text-xl text-blue-300 mb-3">
-                          {eventData?.teamNames?.captain1 || `Team 1`}
-                        </h3>
-                        <div className="space-y-2">
-                          {selectedMaps.filter(m => m.pickedBy === 'captain1').map((m, idx) => (
-                            <div key={idx} className="bg-black/60 p-2 rounded text-white text-sm">
-                              <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-400 underline">
-                                {m.x}, {m.y}
-                              </a>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-black/60 p-4 rounded border-2 border-amber-600">
-                        <h3 className="text-xl text-orange-300 mb-3 text-center">Available Maps</h3>
-                        {parsedMaps.length === 0 ? (
-                          <div className="text-center text-gray-400">All picked!</div>
-                        ) : (
-                          <div className="space-y-2">
-                            {parsedMaps.map((m) => (
-                              <button
-                                key={m.id}
-                                onClick={() => isCurrentCaptain ? pickMap(m) : null}
-                                disabled={!isCurrentCaptain}
-                                className={`w-full p-3 rounded text-white transition-colors ${
-                                  isCurrentCaptain 
-                                    ? 'bg-amber-600 hover:bg-amber-700 cursor-pointer' 
-                                    : 'bg-gray-700 cursor-not-allowed opacity-50'
-                                }`}
-                              >
-                                <div className="font-bold">{m.x}, {m.y}</div>
-                                <a 
-                                  href={m.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-blue-300 hover:text-blue-400 underline"
-                                >
-                                  View on ExploreOutlands
-                                </a>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="bg-red-900/60 p-4 rounded border-2 border-red-500">
-                        <h3 className="text-xl text-red-300 mb-3">
-                          {eventData?.teamNames?.captain2 || `Team 2`}
-                        </h3>
-                        <div className="space-y-2">
-                          {selectedMaps.filter(m => m.pickedBy === 'captain2').map((m, idx) => (
-                            <div key={idx} className="bg-black/60 p-2 rounded text-white text-sm">
-                              <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-red-300 hover:text-red-400 underline">
-                                {m.x}, {m.y}
-                              </a>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.4.0 - Manual Player Addition
-                </div>
-              </div>
-            );
-          }
-
-          if (view === 'complete') {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
-                <div className="max-w-6xl mx-auto">
-                  {characterName && (
-                    <div className="text-center mb-4">
-                      <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                        Character: {characterName}
-                      </span>
-                    </div>
-                  )}
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-4xl font-bold text-amber-400 mb-8 text-center">Teams Ready!</h2>
-                    <div className="grid grid-cols-2 gap-8 mb-8">
-                      <div className="bg-blue-900/60 p-6 rounded border-2 border-blue-500">
-                        <h3 className="text-2xl text-blue-300 mb-4 flex items-center gap-2">
-                          <Shield className="w-6 h-6" />
-                          {eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`}
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="bg-blue-800/60 p-3 rounded text-white font-bold">
-                            {captains[0]?.name} (Captain)
-                          </div>
-                          {teams.captain1.map((p, idx) => (
-                            <div key={idx} className="bg-black/60 p-3 rounded text-white flex justify-between items-center">
-                              <span>{p.name}</span>
-                              <div className="flex gap-1">{getRoleIcons(p)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="bg-red-900/60 p-6 rounded border-2 border-red-500">
-                        <h3 className="text-2xl text-red-300 mb-4 flex items-center gap-2">
-                          <Shield className="w-6 h-6" />
-                          {eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`}
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="bg-red-800/60 p-3 rounded text-white font-bold">
-                            {captains[1]?.name} (Captain)
-                          </div>
-                          {teams.captain2.map((p, idx) => (
-                            <div key={idx} className="bg-black/60 p-3 rounded text-white flex justify-between items-center">
-                              <span>{p.name}</span>
-                              <div className="flex gap-1">{getRoleIcons(p)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-center mb-8">
-                      <div className="text-6xl font-bold text-amber-400 mb-2">Ready to Hunt!</div>
-                      <div className="text-xl text-orange-300">Good luck with your treasure maps!</div>
-                      {eventData?.deferredFirstPick && (
-                        <div className="mt-4 bg-purple-900/60 p-4 rounded border-2 border-purple-500">
-                          <p className="text-purple-200 text-lg">
-                            <strong>{captains[eventData.firstPicker]?.name}</strong> deferred and will pick the first treasure map!
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex justify-end">
-                      <button onClick={() => setView('home')} className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg transition-colors text-xl">
-                        OK
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.3.0 - Map Selection
-                </div>
-              </div>
-            );
-          }
-
-          return null;
-        }
-        
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<TreasureMapTeamPicker />);
-    </script>
-</body>
-</html>
-        }
-        
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<TreasureMapTeamPicker />);
-    </script>
-</body>
-</html>
+              const audio
