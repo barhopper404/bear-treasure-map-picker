@@ -863,7 +863,7 @@ function TreasureMapTeamPicker() {
         );
     }
 
-     if (view === 'mapPicking') {
+    if (view === 'mapPicking') {
         return (
             <window.MapPickingView
                 characterName={characterName}
@@ -877,8 +877,6 @@ function TreasureMapTeamPicker() {
             />
         );
     }
-
-    if (view === 'complete') {
 
     if (view === 'complete') {
         return (
@@ -899,4 +897,3 @@ function TreasureMapTeamPicker() {
 // Render the app
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<TreasureMapTeamPicker />);
-
