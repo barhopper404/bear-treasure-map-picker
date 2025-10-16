@@ -1303,75 +1303,79 @@
                         ))}
                       </div>
                     </div>
+                    
                     {isMarshall && !eventData?.started && (
-                      <div className="mb-6 bg-purple-900/40 p-4 rounded border border-purple-600">
-                        <h3 className="text-lg text-purple-300 mb-3 font-bold">⚙️ Timer Settings</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-purple-200 text-sm mb-2">
-                              Captain Choice Timer (10-300s)
-                            </label>
-                            <input 
-                              type="number" 
-                              min="10" 
-                              max="300"
-                              value={captainChoiceTimerSetting}
-                              onChange={(e) => setCaptainChoiceTimerSetting(parseInt(e.target.value) || 45)}
-                              className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
-                            />
-                            <p className="text-purple-300 text-xs mt-1">Currently: {captainChoiceTimerSetting}s</p>
-                          </div>
-                          <div>
-                            <label className="block text-purple-200 text-sm mb-2">
-                              Draft Timer (10-300s)
-                            </label>
-                            <input 
-                              type="number" 
-                              min="10" 
-                              max="300"
-                              value={draftTimerSetting}
-                              onChange={(e) => setDraftTimerSetting(parseInt(e.target.value) || 60)}
-                              className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
-                            />
-                            <p className="text-purple-300 text-xs mt-1">Currently: {draftTimerSetting}s</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-6 bg-orange-900/40 p-4 rounded border border-orange-600">
-                        <h3 className="text-lg text-orange-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-orange-200 text-sm mb-2">
-                              Total Maps (e.g., 10+10=20)
-                            </label>
-                            <input 
-                              type="number" 
-                              min="1" 
-                              max="100"
-                              value={totalMaps}
-                              onChange={(e) => setTotalMaps(parseInt(e.target.value) || 20)}
-                              className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white"
-                            />
-                            <p className="text-orange-300 text-xs mt-1">Total treasure maps to complete</p>
-                          </div>
-                          <div>
-                            <label className="block text-orange-200 text-sm mb-2">
-                              Map Coordinates (Optional)
-                            </label>
-                            <textarea 
-                              value={mapCoords}
-                              onChange={(e) => setMapCoords(e.target.value)}
-                              placeholder="1863,1991|2456,1234|3789,2456"
-                              className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white h-24 font-mono text-sm"
-                            />
-                            <p className="text-orange-300 text-xs mt-1">
-                              Format: XXXX,YYYY|XXXX,YYYY|XXXX,YYYY (separated by |)
-                            </p>
+                      <>
+                        <div className="mb-6 bg-purple-900/40 p-4 rounded border border-purple-600">
+                          <h3 className="text-lg text-purple-300 mb-3 font-bold">⚙️ Timer Settings</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-purple-200 text-sm mb-2">
+                                Captain Choice Timer (10-300s)
+                              </label>
+                              <input 
+                                type="number" 
+                                min="10" 
+                                max="300"
+                                value={captainChoiceTimerSetting}
+                                onChange={(e) => setCaptainChoiceTimerSetting(parseInt(e.target.value) || 45)}
+                                className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
+                              />
+                              <p className="text-purple-300 text-xs mt-1">Currently: {captainChoiceTimerSetting}s</p>
+                            </div>
+                            <div>
+                              <label className="block text-purple-200 text-sm mb-2">
+                                Draft Timer (10-300s)
+                              </label>
+                              <input 
+                                type="number" 
+                                min="10" 
+                                max="300"
+                                value={draftTimerSetting}
+                                onChange={(e) => setDraftTimerSetting(parseInt(e.target.value) || 60)}
+                                className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
+                              />
+                              <p className="text-purple-300 text-xs mt-1">Currently: {draftTimerSetting}s</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                        
+                        <div className="mb-6 bg-orange-900/40 p-4 rounded border border-orange-600">
+                          <h3 className="text-lg text-orange-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-orange-200 text-sm mb-2">
+                                Total Maps (e.g., 10+10=20)
+                              </label>
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max="100"
+                                value={totalMaps}
+                                onChange={(e) => setTotalMaps(parseInt(e.target.value) || 20)}
+                                className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white"
+                              />
+                              <p className="text-orange-300 text-xs mt-1">Total treasure maps to complete</p>
+                            </div>
+                            <div>
+                              <label className="block text-orange-200 text-sm mb-2">
+                                Map Coordinates (Optional)
+                              </label>
+                              <textarea 
+                                value={mapCoords}
+                                onChange={(e) => setMapCoords(e.target.value)}
+                                placeholder="1863,1991|2456,1234|3789,2456"
+                                className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white h-24 font-mono text-sm"
+                              />
+                              <p className="text-orange-300 text-xs mt-1">
+                                Format: XXXX,YYYY|XXXX,YYYY|XXXX,YYYY (separated by |)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
+                    
                     {isMarshall && !eventData?.started && (
                       <button onClick={startEvent} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl">
                         Start Event
@@ -1838,6 +1842,13 @@
           }
 
           return null;
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TreasureMapTeamPicker />);
+    </script>
+</body>
+</html>
         }
         
         const root = ReactDOM.createRoot(document.getElementById('root'));
