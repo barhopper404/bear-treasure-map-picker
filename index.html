@@ -15,6 +15,10 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
+        // Discord OAuth Configuration
+        const DISCORD_CLIENT_ID = '1428188591263191120';
+        const REDIRECT_URI = 'https://barhopper404.github.io/bear-treasure-map-picker/';
+        
         // IMPORTANT: Replace this with your Google Apps Script Web App URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec';
         
@@ -127,18 +131,25 @@
           const [tempTeamName, setTempTeamName] = useState('');
           const [editingRoles, setEditingRoles] = useState({});
           const [tempRoles, setTempRoles] = useState({});
+          const [discordUser, setDiscordUser] = useState(null);
+          const [isAuthenticating, setIsAuthenticating] = useState(false);
 
           // Check for event ID in URL on load
           useEffect(() => {
             const urlParams = new URLSearchParams(window.location.search);
             const eventParam = urlParams.get('event');
-            if (eventParam) {
+            const codeParam = urlParams.get('code');
+            
+            if (codeParam) {
+              // Handle Discord OAuth callback
+              handleDiscordCallback(codeParam);
+            } else if (eventParam) {
               setEventId(eventParam);
-              setView('join');
+              // Don't auto-navigate to join - require Discord login first
             }
           }, []);
 
-          // Store character name in localStorage
+          // Store character name and Discord user in localStorage
           useEffect(() => {
             if (characterName) {
               try {
@@ -147,19 +158,75 @@
                 console.log('localStorage not available:', e);
               }
             }
-          }, [characterName]);
+            if (discordUser) {
+              try {
+                localStorage.setItem('bearDiscordUser', JSON.stringify(discordUser));
+              } catch (e) {
+                console.log('localStorage not available:', e);
+              }
+            }
+          }, [characterName, discordUser]);
 
-          // Load character name from localStorage on mount
+          // Load character name and Discord user from localStorage on mount
           useEffect(() => {
             try {
               const savedName = localStorage.getItem('bearCharacterName');
               if (savedName) {
                 setCharacterName(savedName);
               }
+              const savedDiscord = localStorage.getItem('bearDiscordUser');
+              if (savedDiscord) {
+                setDiscordUser(JSON.parse(savedDiscord));
+              }
             } catch (e) {
               console.log('localStorage not available:', e);
             }
           }, []);
+
+          const handleDiscordCallback = async (code) => {
+            setIsAuthenticating(true);
+            try {
+              const params = new URLSearchParams({
+                action: 'exchangeCode',
+                code: code
+              });
+              
+              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                setDiscordUser(result.user);
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname + (eventId ? `?event=${eventId}` : ''));
+                
+                // If there was an event ID, go to join view
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('event')) {
+                  setView('join');
+                }
+              } else {
+                setError('Discord authentication failed: ' + result.error);
+              }
+            } catch (err) {
+              setError('Error during Discord authentication: ' + err.message);
+            } finally {
+              setIsAuthenticating(false);
+            }
+          };
+
+          const loginWithDiscord = () => {
+            const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify`;
+            window.location.href = authUrl;
+          };
+
+          const logoutDiscord = () => {
+            setDiscordUser(null);
+            try {
+              localStorage.removeItem('bearDiscordUser');
+            } catch (e) {
+              console.log('localStorage not available:', e);
+            }
+          };
 
           // Poll for updates when in lobby or during draft
           useEffect(() => {
@@ -229,12 +296,18 @@
           };
 
           const createEvent = async () => {
+            if (!discordUser) {
+              setError('You must be logged in with Discord to create an event!');
+              return;
+            }
+
             setLoading(true);
             setError('');
             
             const newEventId = generateEventId();
             const participant = {
               name: characterName,
+              discordUser: discordUser,
               wantsCaptain: wantsCaptain,
               lockpicker: isLockpicker,
               healer: isHealer,
@@ -248,6 +321,7 @@
                 action: 'createEvent',
                 eventId: newEventId,
                 marshall: characterName,
+                discordUser: JSON.stringify(discordUser),
                 participantData: JSON.stringify([participant])
               });
               
@@ -270,6 +344,11 @@
           };
 
           const joinEvent = async () => {
+            if (!discordUser) {
+              setError('You must be logged in with Discord to join an event!');
+              return;
+            }
+
             if (hasJoined) {
               setError('You have already joined this event!');
               return;
@@ -280,6 +359,7 @@
 
             const participant = {
               name: characterName,
+              discordUser: discordUser,
               wantsCaptain,
               lockpicker: isLockpicker,
               healer: isHealer,
