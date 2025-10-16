@@ -141,6 +141,12 @@
           const [selectedMaps, setSelectedMaps] = useState([]);
           const [currentMapPicker, setCurrentMapPicker] = useState(0);
           const [mapPickingStarted, setMapPickingStarted] = useState(false);
+          const [showAddPlayer, setShowAddPlayer] = useState(false);
+          const [newPlayerName, setNewPlayerName] = useState('');
+          const [newPlayerCaptain, setNewPlayerCaptain] = useState(false);
+          const [newPlayerLockpicker, setNewPlayerLockpicker] = useState(false);
+          const [newPlayerHealer, setNewPlayerHealer] = useState(false);
+          const [newPlayerBard, setNewPlayerBard] = useState(false);
 
           // Check for event ID in URL on load
           useEffect(() => {
@@ -776,6 +782,64 @@
               setView('complete');
             } else {
               setPickingCaptain(prev => prev === 0 ? 1 : 0);
+            }
+          };
+
+          const addManualPlayer = async () => {
+            if (!newPlayerName.trim()) {
+              setError('Player name is required!');
+              return;
+            }
+
+            // Check for duplicate names
+            const existingNames = eventData.participants.map(p => p.name.toLowerCase());
+            if (existingNames.includes(newPlayerName.toLowerCase())) {
+              setError('A player with this name already exists!');
+              return;
+            }
+
+            setLoading(true);
+            setError('');
+
+            const manualPlayer = {
+              name: newPlayerName,
+              discordUser: {
+                id: `manual_${Date.now()}`,
+                username: `${newPlayerName} (Manual)`
+              },
+              wantsCaptain: newPlayerCaptain,
+              lockpicker: newPlayerLockpicker,
+              healer: newPlayerHealer,
+              bard: newPlayerBard,
+              isMarshall: false,
+              isManual: true
+            };
+
+            try {
+              const params = new URLSearchParams({
+                action: 'addParticipant',
+                eventId: eventId,
+                participantData: JSON.stringify(manualPlayer)
+              });
+
+              const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+              const result = await response.json();
+
+              if (result.success) {
+                setEventData(result.eventData);
+                setShowAddPlayer(false);
+                setNewPlayerName('');
+                setNewPlayerCaptain(false);
+                setNewPlayerLockpicker(false);
+                setNewPlayerHealer(false);
+                setNewPlayerBard(false);
+              } else {
+                setError('Failed to add player: ' + result.error);
+              }
+            } catch (err) {
+              setError('Error adding player: ' + err.message);
+            } finally {
+              setLoading(false);
             }
           };
 
@@ -1761,7 +1825,7 @@
                   </div>
                 </div>
                 <div className="text-center mt-4 text-amber-600 text-sm">
-                  v1.3.0 - Map Selection
+                  v1.4.0 - Manual Player Addition
                 </div>
               </div>
             );
