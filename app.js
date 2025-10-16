@@ -42,6 +42,12 @@ function TreasureMapTeamPicker() {
     const [newPlayerLockpicker, setNewPlayerLockpicker] = useState(false);
     const [newPlayerHealer, setNewPlayerHealer] = useState(false);
     const [newPlayerBard, setNewPlayerBard] = useState(false);
+    
+    // Map picking state
+    const [parsedMaps, setParsedMaps] = useState([]);
+    const [selectedMaps, setSelectedMaps] = useState([]);
+    const [currentMapPicker, setCurrentMapPicker] = useState(0);
+    const [mapPickingStarted, setMapPickingStarted] = useState(false);
 
     // Initialize on mount
     useEffect(() => {
@@ -334,7 +340,8 @@ function TreasureMapTeamPicker() {
             }, 1500);
         });
     };
-// Defer first pick
+
+    // Defer first pick
     const handleDeferFirstPick = async () => {
         setFirstPickerDeferred(true);
         
@@ -492,6 +499,7 @@ function TreasureMapTeamPicker() {
 
             try {
                 await window.ApiUtils.updateEvent(eventId, finalEventData);
+                setEventData(finalEventData);
             } catch (err) {
                 console.error('Error finalizing teams:', err);
             }
@@ -501,6 +509,66 @@ function TreasureMapTeamPicker() {
             setPickingCaptain(prev => prev === 0 ? 1 : 0);
         }
     };
+
+    // Pick map handler
+    const handlePickMap = async (map) => {
+        const teamKey = currentMapPicker === 0 ? 'captain1' : 'captain2';
+        
+        const newSelectedMaps = [...selectedMaps, { ...map, pickedBy: teamKey }];
+        setSelectedMaps(newSelectedMaps);
+        
+        const newAvailableMaps = parsedMaps.filter(m => m.id !== map.id);
+        setParsedMaps(newAvailableMaps);
+        
+        const updatedEventData = {
+            ...eventData,
+            selectedMaps: newSelectedMaps,
+            maps: newAvailableMaps,
+            currentMapPicker: currentMapPicker === 0 ? 1 : 0
+        };
+        
+        try {
+            await window.ApiUtils.updateEvent(eventId, updatedEventData);
+            setEventData(updatedEventData);
+        } catch (err) {
+            console.error('Error updating maps:', err);
+        }
+        
+        // Check if all maps picked
+        if (newAvailableMaps.length === 0) {
+            setView('complete');
+        } else {
+            setCurrentMapPicker(prev => prev === 0 ? 1 : 0);
+        }
+    };
+
+    // Parse map coordinates when entering complete view
+    useEffect(() => {
+        if (view === 'complete' && mapCoords && !mapPickingStarted) {
+            const coordsList = mapCoords.split('|').map(coord => coord.trim()).filter(coord => coord);
+            
+            if (coordsList.length > 0) {
+                const maps = coordsList.map((coord, index) => {
+                    const [x, y] = coord.split(',').map(c => c.trim());
+                    return {
+                        id: `map_${index}`,
+                        x: x,
+                        y: y,
+                        url: `https://exploreoutlands.com/?c=${x},${y}`
+                    };
+                });
+                
+                setParsedMaps(maps);
+                setSelectedMaps([]);
+                
+                // Determine who picks first (person who deferred picks maps first)
+                const firstMapPicker = firstPickerDeferred ? (pickingCaptain === 0 ? 1 : 0) : pickingCaptain;
+                setCurrentMapPicker(firstMapPicker);
+                setMapPickingStarted(true);
+                setView('mapPicking');
+            }
+        }
+    }, [view, mapCoords, mapPickingStarted, firstPickerDeferred, pickingCaptain]);
 
     // Add manual player
     const handleAddManualPlayer = async () => {
@@ -711,7 +779,7 @@ function TreasureMapTeamPicker() {
         );
     }
 
-    if (view === 'lobby') {
+   if (view === 'lobby') {
         return (
             <window.LobbyView
                 characterName={characterName}
@@ -794,6 +862,23 @@ function TreasureMapTeamPicker() {
         );
     }
 
+     if (view === 'mapPicking') {
+        return (
+            <window.MapPickingView
+                characterName={characterName}
+                captains={captains}
+                currentMapPicker={currentMapPicker}
+                parsedMaps={parsedMaps}
+                selectedMaps={selectedMaps}
+                eventData={eventData}
+                onPickMap={handlePickMap}
+                getRoleIcons={getRoleIcons}
+            />
+        );
+    }
+
+    if (view === 'complete') {
+
     if (view === 'complete') {
         return (
             <window.CompleteView
@@ -813,3 +898,4 @@ function TreasureMapTeamPicker() {
 // Render the app
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<TreasureMapTeamPicker />);
+
