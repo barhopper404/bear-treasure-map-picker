@@ -138,15 +138,23 @@
           // Store character name in localStorage
           useEffect(() => {
             if (characterName) {
-              localStorage.setItem('bearCharacterName', characterName);
+              try {
+                localStorage.setItem('bearCharacterName', characterName);
+              } catch (e) {
+                console.log('localStorage not available:', e);
+              }
             }
           }, [characterName]);
 
           // Load character name from localStorage on mount
           useEffect(() => {
-            const savedName = localStorage.getItem('bearCharacterName');
-            if (savedName) {
-              setCharacterName(savedName);
+            try {
+              const savedName = localStorage.getItem('bearCharacterName');
+              if (savedName) {
+                setCharacterName(savedName);
+              }
+            } catch (e) {
+              console.log('localStorage not available:', e);
             }
           }, []);
 
@@ -1294,7 +1302,6 @@
                           <Shield className="w-6 h-6" />
                           {eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`}
                         </h3>
-                        </h3>
                         <div className="space-y-2">
                           <div className="bg-blue-800/60 p-3 rounded text-white font-bold">
                             {captains[0]?.name} (Captain)
@@ -1311,7 +1318,6 @@
                         <h3 className="text-2xl text-red-300 mb-4 flex items-center gap-2">
                           <Shield className="w-6 h-6" />
                           {eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`}
-                        </h3>
                         </h3>
                         <div className="space-y-2">
                           <div className="bg-red-800/60 p-3 rounded text-white font-bold">
