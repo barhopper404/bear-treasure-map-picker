@@ -544,7 +544,7 @@ function TreasureMapTeamPicker() {
 
     // Parse map coordinates when entering complete view
     useEffect(() => {
-        if (view === 'complete' && mapCoords && !mapPickingStarted) {
+        if (view === 'complete' && mapCoords.trim() && !mapPickingStarted) {
             const coordsList = mapCoords.split('|').map(coord => coord.trim()).filter(coord => coord);
             
             if (coordsList.length > 0) {
@@ -560,15 +560,16 @@ function TreasureMapTeamPicker() {
                 
                 setParsedMaps(maps);
                 setSelectedMaps([]);
-                
-                // Determine who picks first (person who deferred picks maps first)
-                const firstMapPicker = firstPickerDeferred ? (pickingCaptain === 0 ? 1 : 0) : pickingCaptain;
-                setCurrentMapPicker(firstMapPicker);
+                setCurrentMapPicker(0); // Team 1 captain always picks first map
                 setMapPickingStarted(true);
-                setView('mapPicking');
+                
+                // Small delay to ensure state is set before view change
+                setTimeout(() => {
+                    setView('mapPicking');
+                }, 100);
             }
         }
-    }, [view, mapCoords, mapPickingStarted, firstPickerDeferred, pickingCaptain]);
+    }, [view, mapCoords, mapPickingStarted]);
 
     // Add manual player
     const handleAddManualPlayer = async () => {
