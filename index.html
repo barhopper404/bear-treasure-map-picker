@@ -803,6 +803,9 @@
                     </div>
                   </div>
                 </div>
+                <div className="text-center mt-4 text-amber-600 text-sm">
+                  v1.0.0
+                </div>
               </div>
             );
           }
@@ -919,6 +922,9 @@
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="text-center mt-4 text-amber-600 text-sm">
+                  v1.0.0
                 </div>
               </div>
             );
@@ -1085,6 +1091,9 @@
                     )}
                   </div>
                 </div>
+                <div className="text-center mt-4 text-amber-600 text-sm">
+                  v1.0.0
+                </div>
               </div>
             );
           }
@@ -1156,6 +1165,9 @@
                     )}
                   </div>
                 </div>
+                <div className="text-center mt-4 text-amber-600 text-sm">
+                  v1.0.0
+                </div>
               </div>
             );
           }
@@ -1164,6 +1176,7 @@
             const isCurrentCaptain = captains[pickingCaptain]?.name === characterName;
             const isCaptain1 = captains[0]?.name === characterName;
             const isCaptain2 = captains[1]?.name === characterName;
+            const isCaptain = isCaptain1 || isCaptain2;
             
             return (
               <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
@@ -1211,14 +1224,26 @@
                           <div className="mb-3">
                             <input
                               type="text"
-                              value={teamNames.captain1}
-                              onChange={(e) => setTeamNames({ ...teamNames, captain1: e.target.value })}
-                              onBlur={() => updateTeamName('captain1', teamNames.captain1)}
-                              onKeyPress={(e) => e.key === 'Enter' && updateTeamName('captain1', teamNames.captain1)}
-                              className="w-full px-2 py-1 bg-black/60 border border-blue-400 rounded text-white text-lg"
+                              value={tempTeamName}
+                              onChange={(e) => setTempTeamName(e.target.value)}
+                              className="w-full px-2 py-1 mb-2 bg-black/60 border border-blue-400 rounded text-white text-lg"
                               placeholder="Team name..."
                               autoFocus
                             />
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => updateTeamName('captain1')}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
+                              >
+                                Save
+                              </button>
+                              <button 
+                                onClick={() => { setEditingTeamName(null); setTempTeamName(''); }}
+                                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded text-sm"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <h3 className="text-xl text-blue-300 mb-3 flex items-center gap-2">
@@ -1226,7 +1251,7 @@
                             {teamNames.captain1 || `Team 1: ${captains[0]?.name}`}
                             {isCaptain1 && (
                               <button 
-                                onClick={() => setEditingTeamName('captain1')}
+                                onClick={() => startEditingTeamName('captain1')}
                                 className="text-blue-400 hover:text-blue-300 ml-auto"
                               >
                                 <Edit className="w-4 h-4" />
@@ -1235,6 +1260,10 @@
                           </h3>
                         )}
                         <div className="space-y-2">
+                          <div className="bg-blue-800/60 p-2 rounded text-white font-bold flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            {captains[0]?.name} (Captain)
+                          </div>
                           {teams.captain1.map((p, idx) => (
                             <div 
                               key={idx} 
@@ -1279,14 +1308,26 @@
                           <div className="mb-3">
                             <input
                               type="text"
-                              value={teamNames.captain2}
-                              onChange={(e) => setTeamNames({ ...teamNames, captain2: e.target.value })}
-                              onBlur={() => updateTeamName('captain2', teamNames.captain2)}
-                              onKeyPress={(e) => e.key === 'Enter' && updateTeamName('captain2', teamNames.captain2)}
-                              className="w-full px-2 py-1 bg-black/60 border border-red-400 rounded text-white text-lg"
+                              value={tempTeamName}
+                              onChange={(e) => setTempTeamName(e.target.value)}
+                              className="w-full px-2 py-1 mb-2 bg-black/60 border border-red-400 rounded text-white text-lg"
                               placeholder="Team name..."
                               autoFocus
                             />
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => updateTeamName('captain2')}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
+                              >
+                                Save
+                              </button>
+                              <button 
+                                onClick={() => { setEditingTeamName(null); setTempTeamName(''); }}
+                                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded text-sm"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <h3 className="text-xl text-red-300 mb-3 flex items-center gap-2">
@@ -1294,7 +1335,7 @@
                             {teamNames.captain2 || `Team 2: ${captains[1]?.name}`}
                             {isCaptain2 && (
                               <button 
-                                onClick={() => setEditingTeamName('captain2')}
+                                onClick={() => startEditingTeamName('captain2')}
                                 className="text-red-400 hover:text-red-300 ml-auto"
                               >
                                 <Edit className="w-4 h-4" />
@@ -1303,6 +1344,10 @@
                           </h3>
                         )}
                         <div className="space-y-2">
+                          <div className="bg-red-800/60 p-2 rounded text-white font-bold flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            {captains[1]?.name} (Captain)
+                          </div>
                           {teams.captain2.map((p, idx) => (
                             <div 
                               key={idx} 
@@ -1318,6 +1363,9 @@
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="text-center mt-4 text-amber-600 text-sm">
+                  v1.0.0
                 </div>
               </div>
             );
@@ -1389,6 +1437,9 @@
                       </button>
                     </div>
                   </div>
+                </div>
+                <div className="text-center mt-4 text-amber-600 text-sm">
+                  v1.0.0
                 </div>
               </div>
             );
