@@ -780,7 +780,7 @@ function TreasureMapTeamPicker() {
         );
     }
 
-   if (view === 'lobby') {
+if (view === 'lobby') {
         return (
             <window.LobbyView
                 characterName={characterName}
