@@ -48,6 +48,13 @@ function TreasureMapTeamPicker() {
     const [isSummoner, setIsSummoner] = useState(false);
     const [isTank, setIsTank] = useState(false);
     const [isJester, setIsJester] = useState(false);
+    const [newPlayerMeleeDPS, setNewPlayerMeleeDPS] = useState(false);
+    const [newPlayerRangedDPS, setNewPlayerRangedDPS] = useState(false);
+    const [newPlayerTamer, setNewPlayerTamer] = useState(false);
+    const [newPlayerSummoner, setNewPlayerSummoner] = useState(false);
+    const [newPlayerTank, setNewPlayerTank] = useState(false);
+    const [newPlayerJester, setNewPlayerJester] = useState(false);
+
     
     // Map picking state
     const [parsedMaps, setParsedMaps] = useState([]);
@@ -702,12 +709,12 @@ const handleRecordWinner = async (winningTeam) => {
             lockpicker: newPlayerLockpicker,
             healer: newPlayerHealer,
             bard: newPlayerBard,
-            meleeDPS: false,        // ADD (or add new state for these)
-            rangedDPS: false,       // ADD
-            tamer: false,           // ADD
-            summoner: false,        // ADD
-            tank: false,            // ADD
-            jester: false,          // ADD
+            meleeDPS: newPlayerMeleeDPS,        // ADD
+            rangedDPS: newPlayerRangedDPS,      // ADD
+            tamer: newPlayerTamer,              // ADD
+            summoner: newPlayerSummoner,        // ADD
+            tank: newPlayerTank,                // ADD
+            jester: newPlayerJester,            // ADD
             isMarshall: false,
             isManual: true
         };
@@ -723,6 +730,12 @@ const handleRecordWinner = async (winningTeam) => {
                 setNewPlayerLockpicker(false);
                 setNewPlayerHealer(false);
                 setNewPlayerBard(false);
+                setNewPlayerMeleeDPS(false);        // ADD
+                setNewPlayerRangedDPS(false);       // ADD
+                setNewPlayerTamer(false);           // ADD
+                setNewPlayerSummoner(false);        // ADD
+                setNewPlayerTank(false);            // ADD
+                setNewPlayerJester(false);          // ADD
             } else {
                 setError('Failed to add player: ' + result.error);
             }
@@ -797,7 +810,13 @@ const handleRecordWinner = async (winningTeam) => {
             wantsCaptain: participant.wantsCaptain,
             lockpicker: participant.lockpicker,
             healer: participant.healer,
-            bard: participant.bard
+            bard: participant.bard,
+            meleeDPS: participant.meleeDPS || false,        // ADD
+            rangedDPS: participant.rangedDPS || false,      // ADD
+            tamer: participant.tamer || false,              // ADD
+            summoner: participant.summoner || false,        // ADD
+            tank: participant.tank || false,                // ADD
+            jester: participant.jester || false             // ADD
         });
     };
 
@@ -824,17 +843,39 @@ const handleRecordWinner = async (winningTeam) => {
 
     // Get role icons
     const getRoleIcons = (participant) => {
-        const { Key, Heart, Music, Sword, Target, Zap, Skull, Shield, User } = window.Icons;
         const icons = [];
-        if (participant.lockpicker) icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
-        if (participant.healer) icons.push(<Heart key="heart" className="w-4 h-4 text-red-500" />);
-        if (participant.bard) icons.push(<Music key="music" className="w-4 h-4 text-purple-500" />);
-        if (participant.meleeDPS) icons.push(<Sword key="melee" className="w-4 h-4 text-orange-500" />);
-        if (participant.rangedDPS) icons.push(<Target key="ranged" className="w-4 h-4 text-blue-500" />);
-        if (participant.tamer) icons.push(<Zap key="tamer" className="w-4 h-4 text-green-500" />);
-        if (participant.summoner) icons.push(<Skull key="summoner" className="w-4 h-4 text-purple-400" />);
-        if (participant.tank) icons.push(<Shield key="tank" className="w-4 h-4 text-gray-400" />);
-        if (participant.jester) icons.push(<User key="jester" className="w-4 h-4 text-pink-500" />);
+        
+        // Import icons with fallback
+        const { Key, Heart, Music, Sword, Target, Zap, Skull, Shield, User } = window.Icons || {};
+        
+        if (participant.lockpicker && Key) {
+            icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
+        }
+        if (participant.healer && Heart) {
+            icons.push(<Heart key="heart" className="w-4 h-4 text-red-500" />);
+        }
+        if (participant.bard && Music) {
+            icons.push(<Music key="music" className="w-4 h-4 text-purple-500" />);
+        }
+        if (participant.meleeDPS && Sword) {
+            icons.push(<Sword key="melee" className="w-4 h-4 text-orange-500" />);
+        }
+        if (participant.rangedDPS && Target) {
+            icons.push(<Target key="ranged" className="w-4 h-4 text-blue-500" />);
+        }
+        if (participant.tamer && Zap) {
+            icons.push(<Zap key="tamer" className="w-4 h-4 text-green-500" />);
+        }
+        if (participant.summoner && Skull) {
+            icons.push(<Skull key="summoner" className="w-4 h-4 text-purple-400" />);
+        }
+        if (participant.tank && Shield) {
+            icons.push(<Shield key="tank" className="w-4 h-4 text-gray-400" />);
+        }
+        if (participant.jester && User) {
+            icons.push(<User key="jester" className="w-4 h-4 text-pink-500" />);
+        }
+        
         return icons;
     };
 
@@ -945,6 +986,18 @@ const handleRecordWinner = async (winningTeam) => {
                 setNewPlayerHealer={setNewPlayerHealer}
                 newPlayerBard={newPlayerBard}
                 setNewPlayerBard={setNewPlayerBard}
+                newPlayerMeleeDPS={newPlayerMeleeDPS}              // ADD
+                setNewPlayerMeleeDPS={setNewPlayerMeleeDPS}        // ADD
+                newPlayerRangedDPS={newPlayerRangedDPS}            // ADD
+                setNewPlayerRangedDPS={setNewPlayerRangedDPS}      // ADD
+                newPlayerTamer={newPlayerTamer}                    // ADD
+                setNewPlayerTamer={setNewPlayerTamer}              // ADD
+                newPlayerSummoner={newPlayerSummoner}              // ADD
+                setNewPlayerSummoner={setNewPlayerSummoner}        // ADD
+                newPlayerTank={newPlayerTank}                      // ADD
+                setNewPlayerTank={setNewPlayerTank}                // ADD
+                newPlayerJester={newPlayerJester}                  // ADD
+                setNewPlayerJester={setNewPlayerJester}            // ADD
                 captainChoiceTimerSetting={captainChoiceTimerSetting}
                 setCaptainChoiceTimerSetting={setCaptainChoiceTimerSetting}
                 draftTimerSetting={draftTimerSetting}
