@@ -594,63 +594,35 @@ function TreasureMapTeamPicker() {
         setView('complete');
     };
 
-    // Record winner
-    const handleRecordWinner = async (winningTeam) => {
-        const winningTeamName = winningTeam === 'captain1' 
-            ? (eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`)
-            : (eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`);
+    // Record winner - UPDATED VERSION
+const handleRecordWinner = async (winningTeam) => {
+    const winningTeamName = winningTeam === 'captain1' 
+        ? (eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`)
+        : (eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`);
+    
+    if (!confirm(`Confirm ${winningTeamName} won?`)) {
+        return;
+    }
+
+    try {
+        setLoading(true);
         
-        if (!confirm(`Confirm ${winningTeamName} won?`)) {
-            return;
+        // Call the dedicated recordWinner API endpoint
+        const result = await window.ApiUtils.recordWinner(eventId, winningTeam);
+
+        if (result.success) {
+            setEventData(result.eventData);
+            alert('Winner recorded! Stats have been saved to the leaderboard.');
+        } else {
+            alert('Failed to record winner: ' + result.error);
         }
-
-        try {
-            // Prepare stats data
-            const winningTeamPlayers = winningTeam === 'captain1' 
-                ? [captains[0], ...teams.captain1]
-                : [captains[1], ...teams.captain2];
-            
-            const losingTeamPlayers = winningTeam === 'captain1'
-                ? [captains[1], ...teams.captain2]
-                : [captains[0], ...teams.captain1];
-
-            const statsData = {
-                eventId: eventId,
-                winningTeam: winningTeam,
-                winners: winningTeamPlayers.map(p => ({
-                    name: p.name,
-                    discordId: p.discordUser?.id || 'N/A',
-                    discordUsername: p.discordUser?.username || 'N/A'
-                })),
-                losers: losingTeamPlayers.map(p => ({
-                    name: p.name,
-                    discordId: p.discordUser?.id || 'N/A',
-                    discordUsername: p.discordUser?.username || 'N/A'
-                })),
-                eventDate: new Date().toISOString(),
-                totalMaps: totalMaps,
-                mapsCompleted: selectedMaps.length
-            };
-
-            const updatedEventData = {
-                ...eventData,
-                winner: winningTeam,
-                statsRecorded: true,
-                statsData: statsData
-            };
-
-            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
-
-            if (result.success) {
-                setEventData(result.eventData);
-                alert('Winner recorded! Stats have been saved.');
-            } else {
-                alert('Failed to record winner: ' + result.error);
-            }
-        } catch (err) {
-            alert('Error recording winner: ' + err.message);
-        }
-    };
+    } catch (err) {
+        alert('Error recording winner: ' + err.message);
+        console.error('Record winner error:', err);
+    } finally {
+        setLoading(false);
+    }
+};
 
     // Parse map coordinates when entering complete view
     useEffect(() => {

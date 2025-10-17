@@ -39,6 +39,16 @@ window.ApiUtils = {
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
+    recordWinner: async (eventId, winningTeam) => {
+        const params = new URLSearchParams({
+            action: 'recordWinner',
+            eventId: eventId,
+            winningTeam: winningTeam
+        });
+    
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
 
     exchangeDiscordCode: async (code) => {
         const params = new URLSearchParams({
