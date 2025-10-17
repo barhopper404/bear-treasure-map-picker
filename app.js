@@ -161,14 +161,13 @@ function TreasureMapTeamPicker() {
                             setEventData(result.eventData);
 
                             // Sync wheel spinning state
-                            if (result.eventData.wheelSpinning !== undefined && result.eventData.wheelSpinning !== spinningWheel) {
-                                if (result.eventData.wheelSpinning && result.eventData.wheelCandidates) {
-                                    // Start local animation when wheel starts spinning
-                                    setWheelCandidates(result.eventData.wheelCandidates);
-                                    startWheelAnimation(result.eventData.wheelCandidates, result.eventData.wheelWinner);
-                                } else {
-                                    setSpinningWheel(false);
-                                }
+                            if (result.eventData.wheelSpinning && result.eventData.wheelCandidates && !spinningWheel) {
+                                // Start local animation when wheel starts spinning
+                                setWheelCandidates(result.eventData.wheelCandidates);
+                                startWheelAnimation(result.eventData.wheelCandidates, result.eventData.wheelWinner);
+                            } else if (!result.eventData.wheelSpinning && spinningWheel) {
+                                setSpinningWheel(false);
+                                setWheelCandidates([]);
                             }
 
                             if (result.eventData.started && result.eventData.captains) {
