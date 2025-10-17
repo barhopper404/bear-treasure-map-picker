@@ -843,11 +843,15 @@ const handleRecordWinner = async (winningTeam) => {
 
     // Get role icons
     const getRoleIcons = (participant) => {
+        if (!participant) return [];
+        
         const icons = [];
         
-        // Import icons with fallback
-        const { Key, Heart, Music, Sword, Target, Zap, Skull, Shield, User } = window.Icons || {};
+        // Safely destructure with fallback
+        const Icons = window.Icons || {};
+        const { Key, Heart, Music, Sword, Target, Zap, Skull, Shield, User } = Icons;
         
+        // Only render icons that exist
         if (participant.lockpicker && Key) {
             icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
         }
