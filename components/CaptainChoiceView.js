@@ -10,17 +10,17 @@ window.CaptainChoiceView = ({
     const isFirstCaptain = captains[pickingCaptain]?.name === characterName;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
             <div className="max-w-4xl mx-auto">
                 {characterName && (
                     <div className="text-center mb-4">
-                        <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
+                        <span className="bg-yellow-600 text-gray-900 px-4 py-2 rounded-full text-sm font-bold">
                             Character: {characterName}
                         </span>
                     </div>
                 )}
-                <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-4xl font-bold text-amber-400 mb-8 text-center">Captains Selected!</h2>
+                <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-8 border-2 border-yellow-500">
+                    <h2 className="text-4xl font-bold text-yellow-400 mb-8 text-center">Captains Selected!</h2>
                     
                     <div className="grid grid-cols-2 gap-8 mb-8">
                         <div className="bg-blue-900/60 p-6 rounded border-2 border-blue-500 text-center">
@@ -55,7 +55,7 @@ window.CaptainChoiceView = ({
                                 </button>
                                 <button 
                                     onClick={onDeferFirstPick}
-                                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-6 rounded-lg transition-colors"
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-gray-900 font-bold py-4 px-6 rounded-lg transition-colors"
                                 >
                                     Defer (Pick Map First Later)
                                 </button>
@@ -72,7 +72,7 @@ window.CaptainChoiceView = ({
                     )}
                 </div>
             </div>
-            <div className="text-center mt-4 text-amber-600 text-sm">
+            <div className="text-center mt-4 text-yellow-500 text-sm">
                 {window.AppConfig.VERSION}
             </div>
         </div>
