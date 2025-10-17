@@ -1,4 +1,4 @@
-window.HomeView = ({ characterName, error, setView }) => {
+window.HomeView = ({ characterName, error, setView, setEventId }) => {
     const { Shield, Key, Heart, Music, Trophy, Users, Clock } = window.Icons;
     const [leaderboard, setLeaderboard] = React.useState([]);
     const [liveEvents, setLiveEvents] = React.useState([]);
@@ -168,7 +168,10 @@ window.HomeView = ({ characterName, error, setView }) => {
                                                 </div>
                                                 {!event.started && (
                                                     <button
-                                                        onClick={() => setView('join', event.id)}
+                                                        onClick={() => {
+                                                            setEventId(event.id);
+                                                            setView('join');
+                                                        }}
                                                         className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors"
                                                     >
                                                         Join

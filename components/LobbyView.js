@@ -1,5 +1,7 @@
 window.LobbyView = ({
     characterName,
+    discordUser,
+    isAdmin,
     eventId,
     eventData,
     linkCopied,
@@ -50,11 +52,17 @@ window.LobbyView = ({
     onRemovePlayer,
     onAddManualPlayer,
     onStartEvent,
+    onChangeMarshall,
     setEditingPlayer,
     getRoleIcons
 }) => {
-    const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User } = window.Icons;
+    const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User, RefreshCw } = window.Icons;
     const isMarshall = eventData?.participants?.[0]?.name === characterName;
+
+    // Check if current user has joined the event
+    const currentUserParticipant = eventData?.participants?.find(p =>
+        p.discordUser && discordUser && p.discordUser.id === discordUser.id
+    );
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
@@ -254,6 +262,7 @@ window.LobbyView = ({
                                                     )}
                                                 </div>
                                                 {p.isMarshall && <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">MARSHALL</span>}
+                                                {p.isAdmin && <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded">ADMIN</span>}
                                                 {p.wantsCaptain && (
                                                     <span className="bg-yellow-600 text-gray-900 text-xs px-2 py-1 rounded flex items-center gap-1">
                                                         <Shield className="w-3 h-3" />
@@ -265,23 +274,32 @@ window.LobbyView = ({
                                                 <div className="flex gap-2 flex-wrap">{getRoleIcons(p)}</div>
                                                 {isMarshall && (
                                                     <div className="flex gap-2">
-                                                        <button 
-                                                            onClick={() => onStartEditingRoles(idx, p)} 
-                                                            className="text-yellow-300 hover:text-yellow-400 p-1" 
+                                                        <button
+                                                            onClick={() => onStartEditingRoles(idx, p)}
+                                                            className="text-yellow-300 hover:text-yellow-400 p-1"
                                                             title="Edit roles"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
                                                         {!p.isMarshall && (
-                                                            <button 
-                                                                onClick={() => onRemovePlayer(idx)} 
-                                                                className="text-red-400 hover:text-red-500 p-1" 
+                                                            <button
+                                                                onClick={() => onRemovePlayer(idx)}
+                                                                className="text-red-400 hover:text-red-500 p-1"
                                                                 title="Kick player"
                                                             >
                                                                 <Trash className="w-4 h-4" />
                                                             </button>
                                                         )}
                                                     </div>
+                                                )}
+                                                {isAdmin && currentUserParticipant && !eventData?.started && !p.isMarshall && p.discordUser && !p.isManual && (
+                                                    <button
+                                                        onClick={() => onChangeMarshall(p.discordUser.id)}
+                                                        className="text-purple-400 hover:text-purple-500 p-1"
+                                                        title="Make Marshall"
+                                                    >
+                                                        <RefreshCw className="w-4 h-4" />
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>

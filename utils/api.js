@@ -96,7 +96,27 @@ window.ApiUtils = {
         const params = new URLSearchParams({
             action: 'getLiveEvents'
         });
-        
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    getAdmins: async () => {
+        const params = new URLSearchParams({
+            action: 'getAdmins'
+        });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    changeMarshall: async (eventId, newMarshallDiscordId) => {
+        const params = new URLSearchParams({
+            action: 'changeMarshall',
+            eventId: eventId,
+            newMarshallDiscordId: newMarshallDiscordId
+        });
+
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     }

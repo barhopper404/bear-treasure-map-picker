@@ -54,8 +54,10 @@ function TreasureMapTeamPicker() {
     const [newPlayerSummoner, setNewPlayerSummoner] = useState(false);
     const [newPlayerTank, setNewPlayerTank] = useState(false);
     const [newPlayerJester, setNewPlayerJester] = useState(false);
+    const [adminList, setAdminList] = useState([]);
+    const [isAdmin, setIsAdmin] = useState(false);
 
-    
+
     // Map picking state
     const [parsedMaps, setParsedMaps] = useState([]);
     const [selectedMaps, setSelectedMaps] = useState([]);
@@ -71,7 +73,7 @@ function TreasureMapTeamPicker() {
         const urlParams = new URLSearchParams(window.location.search);
         const eventParam = urlParams.get('event');
         const codeParam = urlParams.get('code');
-        
+
         if (codeParam) {
             handleDiscordCallback(codeParam);
         } else if (eventParam) {
@@ -85,16 +87,41 @@ function TreasureMapTeamPicker() {
         // Load saved data
         const savedName = window.StorageUtils.getCharacterName();
         if (savedName) setCharacterName(savedName);
-        
+
         const savedDiscord = window.StorageUtils.getDiscordUser();
         if (savedDiscord) setDiscordUser(savedDiscord);
+
+        // Fetch admin list
+        fetchAdminList();
     }, []);
+
+    // Fetch admin list from backend
+    const fetchAdminList = async () => {
+        try {
+            const result = await window.ApiUtils.getAdmins();
+            if (result.success) {
+                setAdminList(result.admins || []);
+            }
+        } catch (err) {
+            console.error('Error fetching admin list:', err);
+        }
+    };
 
     // Save character name and discord user
     useEffect(() => {
         if (characterName) window.StorageUtils.saveCharacterName(characterName);
         if (discordUser) window.StorageUtils.saveDiscordUser(discordUser);
     }, [characterName, discordUser]);
+
+    // Check if user is admin
+    useEffect(() => {
+        if (discordUser && adminList.length > 0) {
+            const isUserAdmin = adminList.some(admin => admin.discordId === discordUser.id);
+            setIsAdmin(isUserAdmin);
+        } else {
+            setIsAdmin(false);
+        }
+    }, [discordUser, adminList]);
 
     // Discord authentication
     const handleDiscordCallback = async (code) => {
@@ -183,7 +210,7 @@ function TreasureMapTeamPicker() {
     const handleCreateEvent = async () => {
         setLoading(true);
         setError('');
-        
+
         const newEventId = generateEventId();
         const participant = {
             name: characterName,
@@ -198,7 +225,8 @@ function TreasureMapTeamPicker() {
             summoner: isSummoner,        // ADD
             tank: isTank,                // ADD
             jester: isJester,
-            isMarshall: true
+            isMarshall: true,
+            isAdmin: isAdmin
         };
 
         try {
@@ -242,7 +270,8 @@ function TreasureMapTeamPicker() {
             summoner: isSummoner,        // ADD
             tank: isTank,                // ADD
             jester: isJester,            // ADD
-            isMarshall: false
+            isMarshall: false,
+            isAdmin: isAdmin
         };
 
         try {
@@ -716,7 +745,8 @@ const handleRecordWinner = async (winningTeam) => {
             tank: newPlayerTank,                // ADD
             jester: newPlayerJester,            // ADD
             isMarshall: false,
-            isManual: true
+            isManual: true,
+            isAdmin: false
         };
 
         try {
@@ -825,13 +855,13 @@ const handleRecordWinner = async (winningTeam) => {
         const newName = tempTeamName;
         const updatedTeamNames = { ...teamNames, [teamKey]: newName };
         setTeamNames(updatedTeamNames);
-        
+
         try {
             const updatedEventData = {
                 ...eventData,
                 teamNames: updatedTeamNames
             };
-            
+
             await window.ApiUtils.updateEvent(eventId, updatedEventData);
             setEventData(updatedEventData);
             setEditingTeamName(null);
@@ -841,7 +871,39 @@ const handleRecordWinner = async (winningTeam) => {
         }
     };
 
-    
+    // Change Marshall (Admin only)
+    const handleChangeMarshall = async (newMarshallDiscordId) => {
+        if (!isAdmin) {
+            setError('Only admins can change the Marshall');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to change the Marshall?')) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const result = await window.ApiUtils.changeMarshall(eventId, newMarshallDiscordId);
+
+            if (result.success) {
+                setEventData(result.eventData);
+                alert('Marshall changed successfully!');
+            } else {
+                setError('Failed to change Marshall: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error changing Marshall: ' + err.message);
+            console.error('Change Marshall error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
 
     // Get role icons
     // DEBUG: Log what icons are available
@@ -905,6 +967,7 @@ const handleRecordWinner = async (winningTeam) => {
                 characterName={characterName}
                 error={error}
                 setView={setView}
+                setEventId={setEventId}
             />
         );
     }
@@ -985,6 +1048,8 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.LobbyView
                 characterName={characterName}
+                discordUser={discordUser}
+                isAdmin={isAdmin}
                 eventId={eventId}
                 eventData={eventData}
                 linkCopied={linkCopied}
@@ -1035,6 +1100,7 @@ const handleRecordWinner = async (winningTeam) => {
                 onRemovePlayer={handleRemovePlayer}
                 onAddManualPlayer={handleAddManualPlayer}
                 onStartEvent={handleStartEvent}
+                onChangeMarshall={handleChangeMarshall}
                 setEditingPlayer={setEditingPlayer}
                 getRoleIcons={getRoleIcons}
             />
