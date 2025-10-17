@@ -78,10 +78,7 @@ function TreasureMapTeamPicker() {
             handleDiscordCallback(codeParam);
         } else if (eventParam) {
             setEventId(eventParam);
-            const savedDiscord = window.StorageUtils.getDiscordUser();
-            if (savedDiscord) {
-                setView('join');
-            }
+            setView('join'); // Always go to join view when event link is used
         }
 
         // Load saved data
@@ -257,21 +254,29 @@ function TreasureMapTeamPicker() {
         setLoading(true);
         setError('');
 
+        // Create anonymous user object if no Discord login
+        const userObject = discordUser || {
+            id: `anonymous_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+            username: `${characterName} (Guest)`,
+            isAnonymous: true
+        };
+
         const participant = {
             name: characterName,
-            discordUser: discordUser,
-            wantsCaptain,
+            discordUser: userObject,
+            wantsCaptain: discordUser ? wantsCaptain : false, // Anonymous users cannot be captain
             lockpicker: isLockpicker,
             healer: isHealer,
             bard: isBard,
-            meleeDPS: isMeleeDPS,        // ADD
-            rangedDPS: isRangedDPS,      // ADD
-            tamer: isTamer,              // ADD
-            summoner: isSummoner,        // ADD
-            tank: isTank,                // ADD
-            jester: isJester,            // ADD
+            meleeDPS: isMeleeDPS,
+            rangedDPS: isRangedDPS,
+            tamer: isTamer,
+            summoner: isSummoner,
+            tank: isTank,
+            jester: isJester,
             isMarshall: false,
-            isAdmin: isAdmin
+            isAdmin: discordUser ? isAdmin : false, // Anonymous users cannot be admin
+            isAnonymous: !discordUser
         };
 
         try {
@@ -328,25 +333,26 @@ function TreasureMapTeamPicker() {
 
     const animateWheelSpin = (names, callback) => {
         setSpinningWheel(true);
-        
+
         let count = 0;
         const spinDuration = 3000;
         const intervalTime = 100;
         const totalSpins = spinDuration / intervalTime;
-        
+
         const interval = setInterval(() => {
             setCurrentWheelName(names[count % names.length].name);
             count++;
-            
+
             if (count >= totalSpins) {
                 clearInterval(interval);
                 const winner = spinWheel(names);
                 setCurrentWheelName(winner.name);
-                
+
+                // Pause on winner for 3 seconds before continuing
                 setTimeout(() => {
                     setSpinningWheel(false);
                     callback(winner);
-                }, 1000);
+                }, 3000);
             }
         }, intervalTime);
     };
@@ -366,40 +372,39 @@ function TreasureMapTeamPicker() {
 
         animateWheelSpin(potentialCaptains, (captain1) => {
             const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
-            
-            setTimeout(() => {
-                animateWheelSpin(remainingCaptains, async (captain2) => {
-                    const firstPicker = Math.random() < 0.5 ? 0 : 1;
-                    
-                    const selectedCaptains = [captain1, captain2];
-                    const nonCaptains = eventData.participants.filter(
-                        p => p.name !== captain1.name && p.name !== captain2.name
-                    );
 
-                    const updatedEventData = {
-                        ...eventData,
-                        started: true,
-                        captains: selectedCaptains,
-                        firstPicker: firstPicker,
-                        currentPicker: firstPicker,
-                        availablePlayers: nonCaptains,
-                        teams: { captain1: [], captain2: [] },
-                        deferredFirstPick: false
-                    };
+            // Immediately start second wheel spin after first wheel finishes
+            animateWheelSpin(remainingCaptains, async (captain2) => {
+                const firstPicker = Math.random() < 0.5 ? 0 : 1;
 
-                    try {
-                        await window.ApiUtils.updateEvent(eventId, updatedEventData);
-                        
-                        setCaptains(selectedCaptains);
-                        setPickingCaptain(firstPicker);
-                        setAvailablePlayers(nonCaptains);
-                        setTeams({ captain1: [], captain2: [] });
-                        setView('captainReveal'); // CHANGED from 'captainChoice'
-                    } catch (err) {
-                        setError('Error starting event: ' + err.message);
-                    }
-                });
-            }, 1500);
+                const selectedCaptains = [captain1, captain2];
+                const nonCaptains = eventData.participants.filter(
+                    p => p.name !== captain1.name && p.name !== captain2.name
+                );
+
+                const updatedEventData = {
+                    ...eventData,
+                    started: true,
+                    captains: selectedCaptains,
+                    firstPicker: firstPicker,
+                    currentPicker: firstPicker,
+                    availablePlayers: nonCaptains,
+                    teams: { captain1: [], captain2: [] },
+                    deferredFirstPick: false
+                };
+
+                try {
+                    await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+                    setCaptains(selectedCaptains);
+                    setPickingCaptain(firstPicker);
+                    setAvailablePlayers(nonCaptains);
+                    setTeams({ captain1: [], captain2: [] });
+                    setView('captainReveal'); // CHANGED from 'captainChoice'
+                } catch (err) {
+                    setError('Error starting event: ' + err.message);
+                }
+            });
         });
     };
 

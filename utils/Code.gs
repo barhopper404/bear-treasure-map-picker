@@ -206,13 +206,13 @@ function recordWinner(e, eventsSheet, statsSheet) {
   }
   
   for (let i = 0; i < winningTeamMembers.length; i++) {
-    if (winningTeamMembers[i] && winningTeamMembers[i].discordUser) {
+    if (winningTeamMembers[i] && winningTeamMembers[i].discordUser && !winningTeamMembers[i].isAnonymous && !winningTeamMembers[i].discordUser.isAnonymous) {
       updatePlayerStats(statsSheet, winningTeamMembers[i].discordUser, 'win');
     }
   }
-  
+
   for (let i = 0; i < losingTeamMembers.length; i++) {
-    if (losingTeamMembers[i] && losingTeamMembers[i].discordUser) {
+    if (losingTeamMembers[i] && losingTeamMembers[i].discordUser && !losingTeamMembers[i].isAnonymous && !losingTeamMembers[i].discordUser.isAnonymous) {
       updatePlayerStats(statsSheet, losingTeamMembers[i].discordUser, 'loss');
     }
   }

@@ -290,6 +290,7 @@ window.LobbyView = ({
                                                 </div>
                                                 {p.isMarshall && <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">MARSHALL</span>}
                                                 {p.isAdmin && <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded">ADMIN</span>}
+                                                {p.isAnonymous && <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">GUEST</span>}
                                                 {p.wantsCaptain && (
                                                     <span className="bg-yellow-600 text-gray-900 text-xs px-2 py-1 rounded flex items-center gap-1">
                                                         <Shield className="w-3 h-3" />
@@ -308,7 +309,7 @@ window.LobbyView = ({
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
-                                                        {!p.isMarshall && p.discordUser && !p.isManual && !eventData?.started && (
+                                                        {!p.isMarshall && p.discordUser && !p.isManual && !p.isAnonymous && !eventData?.started && (
                                                             <button
                                                                 onClick={() => onTransferMarshall(p.discordUser.id)}
                                                                 className="text-purple-400 hover:text-purple-500 p-1"

@@ -32,46 +32,41 @@ window.JoinEventView = ({
 }) => {
     const { Shield, Key, Heart, Music, Discord, Sword, Target, Zap, Skull, User } = window.Icons;
     
-    if (!discordUser) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
-                <div className="max-w-2xl mx-auto">
-                    <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-8 border-2 border-yellow-500 text-center">
-                        <h2 className="text-3xl font-bold text-yellow-400 mb-6">Authentication Required</h2>
-                        <p className="text-gray-300 mb-6">You must log in with Discord to join an event.</p>
-                        <button
-                            onClick={onLoginWithDiscord}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl flex items-center justify-center gap-3 mx-auto"
-                        >
-                            <Discord className="w-6 h-6" />
-                            Login with Discord
-                        </button>
-                        <button
-                            onClick={() => setView('home')}
-                            className="mt-4 text-yellow-300 hover:text-yellow-400 underline"
-                        >
-                            Back to Home
-                        </button>
-                    </div>
-                </div>
-                <div className="text-center mt-4 text-yellow-500 text-sm">
-                    {window.AppConfig.VERSION}
-                </div>
-            </div>
-        );
-    }
+    // Allow joining without Discord, but show notice about limitations
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
             <div className="max-w-2xl mx-auto">
                 <div className="text-center mb-4">
-                    <span className="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 inline-flex">
-                        <Discord className="w-4 h-4" />
-                        {discordUser.username}
-                    </span>
+                    {discordUser ? (
+                        <span className="bg-indigo-600 text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 inline-flex">
+                            <Discord className="w-4 h-4" />
+                            {discordUser.username}
+                        </span>
+                    ) : (
+                        <div className="space-y-2">
+                            <span className="bg-gray-600 text-white px-4 py-2 rounded-full text-sm inline-block">
+                                Anonymous User
+                            </span>
+                            <button
+                                onClick={onLoginWithDiscord}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 mx-auto"
+                            >
+                                <Discord className="w-4 h-4" />
+                                Login with Discord
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-8 border-2 border-yellow-500">
                     <h2 className="text-3xl font-bold text-yellow-400 mb-6">Join Event</h2>
+
+                    {!discordUser && (
+                        <div className="bg-yellow-600/20 border border-yellow-500 text-yellow-200 px-4 py-3 rounded mb-4">
+                            <p className="font-bold mb-1">Playing as Guest</p>
+                            <p className="text-sm">Your stats won't be tracked. You cannot be Marshall.</p>
+                        </div>
+                    )}
                     
                     {error && (
                         <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
@@ -104,10 +99,17 @@ window.JoinEventView = ({
                         <div>
                             <label className="block text-gray-300 mb-3 font-bold">Your Roles</label>
                             <div className="grid grid-cols-2 gap-3">
-                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-3 rounded border border-gray-600 hover:border-yellow-500 transition-colors">
-                                    <input type="checkbox" checked={wantsCaptain} onChange={(e) => setWantsCaptain(e.target.checked)} className="w-5 h-5" />
+                                <label className={`flex items-center gap-2 text-gray-300 p-3 rounded border border-gray-600 transition-colors ${!discordUser ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer bg-gray-700/20 hover:border-yellow-500'}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={wantsCaptain}
+                                        onChange={(e) => setWantsCaptain(e.target.checked)}
+                                        className="w-5 h-5"
+                                        disabled={!discordUser}
+                                        title={!discordUser ? 'Login with Discord to be Captain' : ''}
+                                    />
                                     <Shield className="w-5 h-5 text-yellow-400" />
-                                    <span>Captain</span>
+                                    <span>Captain {!discordUser && '(Discord Required)'}</span>
                                 </label>
                                 <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-3 rounded border border-gray-600 hover:border-yellow-500 transition-colors">
                                     <input type="checkbox" checked={isLockpicker} onChange={(e) => setIsLockpicker(e.target.checked)} className="w-5 h-5" />
