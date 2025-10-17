@@ -24,6 +24,8 @@ window.LobbyView = ({
     setCaptainChoiceTimerSetting,
     draftTimerSetting,
     setDraftTimerSetting,
+    mapPickTimerSetting,
+    setMapPickTimerSetting,
     totalMaps,
     setTotalMaps,
     mapCoords,
