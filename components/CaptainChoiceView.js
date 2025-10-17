@@ -6,7 +6,7 @@ window.CaptainChoiceView = ({
     onStartDrafting,
     onDeferFirstPick
 }) => {
-    const { Shield } = window.Icons;
+    const Shield = (window.Icons && window.Icons.Shield) || (() => <div />);
     const isFirstCaptain = captains[pickingCaptain]?.name === characterName;
 
     return (
