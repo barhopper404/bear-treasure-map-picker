@@ -72,6 +72,30 @@ window.LobbyView = ({
 
     // Wheel rotation state for animation
     const [wheelRotation, setWheelRotation] = React.useState(0);
+    const [lastTickSegment, setLastTickSegment] = React.useState(-1);
+
+    // Create audio context for ticking sound
+    const playTick = React.useCallback(() => {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800; // High pitched tick
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.05);
+        } catch (e) {
+            console.log('Audio not supported');
+        }
+    }, []);
 
     // Animate wheel rotation
     React.useEffect(() => {
@@ -93,6 +117,17 @@ window.LobbyView = ({
 
                 setWheelRotation(degrees);
 
+                // Calculate which segment is currently at the ticker (right side = 0 degrees)
+                const normalizedRotation = degrees % 360;
+                const segmentAngle = 360 / wheelCandidates.length;
+                const currentSegment = Math.floor(normalizedRotation / segmentAngle);
+
+                // Play tick sound when crossing to a new segment
+                if (currentSegment !== lastTickSegment) {
+                    setLastTickSegment(currentSegment);
+                    playTick();
+                }
+
                 if (progress < 1) {
                     animationFrame = requestAnimationFrame(animate);
                 }
@@ -107,8 +142,9 @@ window.LobbyView = ({
             };
         } else {
             setWheelRotation(0);
+            setLastTickSegment(-1);
         }
-    }, [spinningWheel, wheelCandidates]);
+    }, [spinningWheel, wheelCandidates, lastTickSegment, playTick]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
@@ -122,9 +158,9 @@ window.LobbyView = ({
                 )}
                 
                 {spinningWheel && wheelCandidates && wheelCandidates.length > 0 && (
-                    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-                        <div className="text-center">
-                            <h2 className="text-5xl font-bold text-yellow-400 mb-12 animate-pulse">Spinning the Wheel!</h2>
+                    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-8">
+                        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl border-4 border-yellow-500 shadow-2xl p-8 max-w-3xl w-full">
+                            <h2 className="text-4xl font-bold text-yellow-400 mb-8 text-center animate-pulse">Spinning the Wheel!</h2>
 
                             <div className="relative w-[500px] h-[500px] mx-auto">
                                 {/* Ticker/Pointer at right */}
@@ -193,7 +229,7 @@ window.LobbyView = ({
                                         })}
                                     </svg>
 
-                                    {/* Name labels positioned on segments */}
+                                    {/* Name labels positioned on segments - rotating with wheel */}
                                     {wheelCandidates.map((candidate, index) => {
                                         const totalCandidates = wheelCandidates.length;
                                         const segmentAngle = 360 / totalCandidates;
@@ -213,7 +249,7 @@ window.LobbyView = ({
                                                 <div
                                                     className="absolute"
                                                     style={{
-                                                        transform: `rotate(${-rotation - wheelRotation}deg) translateX(-50%) translateY(-50%)`,
+                                                        transform: `rotate(90deg) translateX(-50%) translateY(-50%)`,
                                                         left: '0',
                                                         top: '0'
                                                     }}
@@ -236,7 +272,7 @@ window.LobbyView = ({
                                 </div>
                             </div>
 
-                            <p className="text-yellow-300 text-2xl font-semibold mt-12">Selecting Captain...</p>
+                            <p className="text-yellow-300 text-xl font-semibold mt-8 text-center">Selecting Captain...</p>
                         </div>
                     </div>
                 )}
