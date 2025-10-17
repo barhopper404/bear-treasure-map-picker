@@ -155,25 +155,33 @@ function TreasureMapTeamPicker() {
                     if (result.success && result.eventData) {
                         const currentDataStr = JSON.stringify(eventData);
                         const newDataStr = JSON.stringify(result.eventData);
-                        
+
                         if (currentDataStr !== newDataStr) {
                             setEventData(result.eventData);
-                            
+
+                            // Sync wheel spinning state
+                            if (result.eventData.wheelSpinning !== undefined) {
+                                setSpinningWheel(result.eventData.wheelSpinning);
+                            }
+                            if (result.eventData.currentWheelName) {
+                                setCurrentWheelName(result.eventData.currentWheelName);
+                            }
+
                             if (result.eventData.started && result.eventData.captains) {
                                 setCaptains(result.eventData.captains);
-                                
+
                                 if (result.eventData.currentPicker !== pickingCaptain) {
                                     setPickingCaptain(result.eventData.currentPicker || 0);
                                 }
-                                
+
                                 if (result.eventData.teams) {
                                     setTeams(result.eventData.teams);
                                 }
-                                
+
                                 if (result.eventData.availablePlayers) {
                                     setAvailablePlayers(result.eventData.availablePlayers);
                                 }
-                                
+
                                 if (view === 'lobby' && result.eventData.started) {
                                     setView('captainChoice');
                                 }
@@ -193,7 +201,7 @@ function TreasureMapTeamPicker() {
                     console.error('Error polling for updates:', err);
                 }
             }, 3000);
-            
+
             return () => clearInterval(interval);
         }
     }, [view, eventId, eventData, teams, availablePlayers, pickingCaptain]);
@@ -334,18 +342,30 @@ function TreasureMapTeamPicker() {
     const animateWheelSpin = (names, callback) => {
         setSpinningWheel(true);
 
+        // Pre-select the winner
+        const winner = spinWheel(names);
+
         let count = 0;
-        const spinDuration = 3000;
-        const intervalTime = 100;
-        const totalSpins = spinDuration / intervalTime;
+        const totalDuration = 5000; // 5 seconds total spin time
+        const startTime = Date.now();
 
-        const interval = setInterval(() => {
-            setCurrentWheelName(names[count % names.length].name);
-            count++;
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / totalDuration;
 
-            if (count >= totalSpins) {
-                clearInterval(interval);
-                const winner = spinWheel(names);
+            if (progress < 1) {
+                // Calculate interval based on progress (starts fast, slows down)
+                // Using easeOut cubic function for smooth deceleration
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+
+                // Determine which name to show based on eased progress
+                const totalCycles = 20; // Number of times to cycle through all names
+                const currentIndex = Math.floor(easeOut * totalCycles * names.length) % names.length;
+                setCurrentWheelName(names[currentIndex].name);
+
+                requestAnimationFrame(animate);
+            } else {
+                // Spin complete - show winner
                 setCurrentWheelName(winner.name);
 
                 // Pause on winner for 3 seconds before continuing
@@ -354,7 +374,9 @@ function TreasureMapTeamPicker() {
                     callback(winner);
                 }, 3000);
             }
-        }, intervalTime);
+        };
+
+        requestAnimationFrame(animate);
     };
 
     const handleContinueFromReveal = () => {
@@ -364,14 +386,43 @@ function TreasureMapTeamPicker() {
     // Start event and select captains
     const handleStartEvent = async () => {
         const potentialCaptains = eventData.participants.filter(p => p.wantsCaptain);
-        
+
         if (potentialCaptains.length < 2) {
             alert('Need at least 2 people willing to be captain!');
             return;
         }
 
-        animateWheelSpin(potentialCaptains, (captain1) => {
+        // Set wheel spinning state in backend so everyone sees it
+        const updatedEventDataSpinning = {
+            ...eventData,
+            wheelSpinning: true,
+            wheelSpinPhase: 'captain1'
+        };
+
+        try {
+            await window.ApiUtils.updateEvent(eventId, updatedEventDataSpinning);
+            setEventData(updatedEventDataSpinning);
+        } catch (err) {
+            console.error('Error updating wheel state:', err);
+        }
+
+        animateWheelSpin(potentialCaptains, async (captain1) => {
             const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
+
+            // Update to show second wheel spinning
+            const updatedEventDataSpin2 = {
+                ...eventData,
+                wheelSpinning: true,
+                wheelSpinPhase: 'captain2',
+                captain1Selected: captain1
+            };
+
+            try {
+                await window.ApiUtils.updateEvent(eventId, updatedEventDataSpin2);
+                setEventData(updatedEventDataSpin2);
+            } catch (err) {
+                console.error('Error updating wheel state:', err);
+            }
 
             // Immediately start second wheel spin after first wheel finishes
             animateWheelSpin(remainingCaptains, async (captain2) => {
@@ -390,7 +441,9 @@ function TreasureMapTeamPicker() {
                     currentPicker: firstPicker,
                     availablePlayers: nonCaptains,
                     teams: { captain1: [], captain2: [] },
-                    deferredFirstPick: false
+                    deferredFirstPick: false,
+                    wheelSpinning: false,
+                    wheelSpinPhase: null
                 };
 
                 try {

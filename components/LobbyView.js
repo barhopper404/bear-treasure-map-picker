@@ -81,15 +81,26 @@ window.LobbyView = ({
                 )}
                 
                 {spinningWheel && (
-                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 rounded-lg border-4 border-yellow-500 text-center">
-                            <h2 className="text-4xl font-bold text-yellow-400 mb-8">Spinning the Wheel!</h2>
-                            <div className="w-64 h-64 mx-auto mb-8 bg-yellow-600 rounded-full flex items-center justify-center border-8 border-yellow-400 animate-spin">
-                                <div className="bg-gray-900/60 w-48 h-48 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-3xl font-bold">{currentWheelName}</span>
+                    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+                        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 rounded-lg border-4 border-yellow-500 text-center shadow-2xl">
+                            <h2 className="text-5xl font-bold text-yellow-400 mb-12 animate-pulse">Spinning the Wheel!</h2>
+                            <div className="relative w-80 h-80 mx-auto mb-12">
+                                {/* Outer wheel rim with segments */}
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-600 border-8 border-yellow-400 shadow-lg shadow-yellow-500/50"></div>
+
+                                {/* Center display */}
+                                <div className="absolute inset-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-full flex items-center justify-center border-4 border-yellow-400">
+                                    <div className="text-center px-6">
+                                        <span className="text-white text-4xl font-bold block break-words">{currentWheelName}</span>
+                                    </div>
+                                </div>
+
+                                {/* Pointer at top */}
+                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4">
+                                    <div className="w-0 h-0 border-l-8 border-r-8 border-t-16 border-l-transparent border-r-transparent border-t-red-500 shadow-lg"></div>
                                 </div>
                             </div>
-                            <p className="text-yellow-300 text-xl">Selecting Captain...</p>
+                            <p className="text-yellow-300 text-2xl font-semibold">Selecting Captain...</p>
                         </div>
                     </div>
                 )}
