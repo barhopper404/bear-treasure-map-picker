@@ -135,7 +135,7 @@ window.HomeView = ({ characterName, error, setView }) => {
                         ) : (
                             <div className="space-y-2">
                                 {liveEvents.map((event) => (
-                                    <div 
+                                    <div
                                         key={event.id}
                                         className="bg-gray-700/30 border border-green-600 p-4 rounded hover:bg-gray-700/50 transition-colors"
                                     >
@@ -146,8 +146,8 @@ window.HomeView = ({ characterName, error, setView }) => {
                                                 }`}></div>
                                                 <span className="text-white font-bold">Event {event.id}</span>
                                                 <span className={`text-xs px-2 py-1 rounded ${
-                                                    event.started 
-                                                        ? 'bg-green-600/30 text-green-300 border border-green-500' 
+                                                    event.started
+                                                        ? 'bg-green-600/30 text-green-300 border border-green-500'
                                                         : 'bg-yellow-600/30 text-yellow-300 border border-yellow-500'
                                                 }`}>
                                                     {event.started ? 'IN PROGRESS' : 'WAITING'}
@@ -161,9 +161,19 @@ window.HomeView = ({ characterName, error, setView }) => {
                                             <div className="text-gray-300">
                                                 Marshall: <span className="text-yellow-400">{event.marshall}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-gray-400">
-                                                <Users className="w-4 h-4" />
-                                                {event.participantCount}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1 text-gray-400">
+                                                    <Users className="w-4 h-4" />
+                                                    {event.participantCount}
+                                                </div>
+                                                {!event.started && (
+                                                    <button
+                                                        onClick={() => setView('join', event.id)}
+                                                        className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors"
+                                                    >
+                                                        Join
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
