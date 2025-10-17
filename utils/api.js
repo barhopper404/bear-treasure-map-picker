@@ -119,5 +119,15 @@ window.ApiUtils = {
 
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
+    },
+
+    deleteEvent: async (eventId) => {
+        const params = new URLSearchParams({
+            action: 'deleteEvent',
+            eventId: eventId
+        });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
     }
 };

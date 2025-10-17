@@ -86,6 +86,12 @@ function doGet(e) {
       return changeMarshall(eventId, newMarshallDiscordId, eventsSheet);
     }
 
+    // Delete/Cancel Event
+    if (action === 'deleteEvent') {
+      const eventId = e.parameter.eventId;
+      return deleteEvent(eventId, eventsSheet);
+    }
+
     // Record winner
     if (action === 'recordWinner') {
       return recordWinner(e, eventsSheet, statsSheet);
@@ -444,6 +450,24 @@ function changeMarshall(eventId, newMarshallDiscordId, eventsSheet) {
       eventsSheet.getRange(i + 1, 2).setValue(JSON.stringify(eventData));
 
       return createResponse({ success: true, eventData: eventData });
+    }
+  }
+
+  return createResponse({ success: false, error: 'Event not found' });
+}
+
+function deleteEvent(eventId, eventsSheet) {
+  if (!eventsSheet) {
+    return createResponse({ success: false, error: 'Events sheet not found' });
+  }
+
+  const data = eventsSheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === eventId) {
+      // Delete the row
+      eventsSheet.deleteRow(i + 1);
+      return createResponse({ success: true, message: 'Event deleted successfully' });
     }
   }
 

@@ -902,6 +902,133 @@ const handleRecordWinner = async (winningTeam) => {
         }
     };
 
+    // Leave event
+    const handleLeaveEvent = async () => {
+        if (!confirm('Are you sure you want to leave this event?')) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            // Find the current user's participant index
+            const participantIndex = eventData.participants.findIndex(p =>
+                p.discordUser && discordUser && p.discordUser.id === discordUser.id
+            );
+
+            if (participantIndex === -1) {
+                setError('You are not in this event');
+                setLoading(false);
+                return;
+            }
+
+            // Check if user is Marshall
+            if (eventData.participants[participantIndex].isMarshall) {
+                setError('The Marshall cannot leave the event. Please transfer Marshall status first or delete the event.');
+                setLoading(false);
+                return;
+            }
+
+            // Remove the participant
+            const updatedEventData = { ...eventData };
+            updatedEventData.participants.splice(participantIndex, 1);
+
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            if (result.success) {
+                // Return to home view
+                setView('home');
+                setHasJoined(false);
+            } else {
+                setError('Failed to leave event: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error leaving event: ' + err.message);
+            console.error('Leave event error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Transfer Marshall (Marshall only)
+    const handleTransferMarshall = async (newMarshallDiscordId) => {
+        // Check if current user is Marshall
+        const currentUserParticipant = eventData.participants.find(p =>
+            p.discordUser && discordUser && p.discordUser.id === discordUser.id
+        );
+
+        if (!currentUserParticipant || !currentUserParticipant.isMarshall) {
+            setError('Only the Marshall can transfer Marshall status');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to transfer Marshall status to this player?')) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const result = await window.ApiUtils.changeMarshall(eventId, newMarshallDiscordId);
+
+            if (result.success) {
+                setEventData(result.eventData);
+                alert('Marshall transferred successfully!');
+            } else {
+                setError('Failed to transfer Marshall: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error transferring Marshall: ' + err.message);
+            console.error('Transfer Marshall error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Cancel Event (Marshall or Admin only)
+    const handleCancelEvent = async () => {
+        // Check if current user is Marshall or Admin
+        const currentUserParticipant = eventData.participants.find(p =>
+            p.discordUser && discordUser && p.discordUser.id === discordUser.id
+        );
+
+        const canCancel = currentUserParticipant?.isMarshall || isAdmin;
+
+        if (!canCancel) {
+            setError('Only the Marshall or an Admin can cancel the event');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to CANCEL this event? This cannot be undone and all participants will be removed.')) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const result = await window.ApiUtils.deleteEvent(eventId);
+
+            if (result.success) {
+                alert('Event cancelled successfully!');
+                // Return to home view
+                setView('home');
+                setEventId('');
+                setEventData(null);
+                setHasJoined(false);
+            } else {
+                setError('Failed to cancel event: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error cancelling event: ' + err.message);
+            console.error('Cancel event error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
 
@@ -1101,6 +1228,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onAddManualPlayer={handleAddManualPlayer}
                 onStartEvent={handleStartEvent}
                 onChangeMarshall={handleChangeMarshall}
+                onTransferMarshall={handleTransferMarshall}
+                onLeaveEvent={handleLeaveEvent}
+                onCancelEvent={handleCancelEvent}
                 setEditingPlayer={setEditingPlayer}
                 getRoleIcons={getRoleIcons}
             />

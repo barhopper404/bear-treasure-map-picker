@@ -53,16 +53,21 @@ window.LobbyView = ({
     onAddManualPlayer,
     onStartEvent,
     onChangeMarshall,
+    onTransferMarshall,
+    onLeaveEvent,
+    onCancelEvent,
     setEditingPlayer,
     getRoleIcons
 }) => {
-    const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User, RefreshCw } = window.Icons;
-    const isMarshall = eventData?.participants?.[0]?.name === characterName;
+    const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User, RefreshCw, X, UserCheck, XCircle } = window.Icons;
 
     // Check if current user has joined the event
     const currentUserParticipant = eventData?.participants?.find(p =>
         p.discordUser && discordUser && p.discordUser.id === discordUser.id
     );
+
+    // Check if current user is Marshall based on the isMarshall flag
+    const isMarshall = currentUserParticipant?.isMarshall || false;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
@@ -92,11 +97,33 @@ window.LobbyView = ({
                 <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-8 border-2 border-yellow-500">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-3xl font-bold text-yellow-400">Event Lobby</h2>
-                        <div className="text-right">
-                            <div className="text-gray-300 text-sm">Event ID</div>
-                            <div className="text-2xl font-bold text-white">{eventId}</div>
-                            {eventData?.started && (
-                                <div className="text-red-400 text-sm mt-1">🔒 LOCKED</div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <div className="text-gray-300 text-sm">Event ID</div>
+                                <div className="text-2xl font-bold text-white">{eventId}</div>
+                                {eventData?.started && (
+                                    <div className="text-red-400 text-sm mt-1">🔒 LOCKED</div>
+                                )}
+                            </div>
+                            {currentUserParticipant && !currentUserParticipant.isMarshall && !eventData?.started && (
+                                <button
+                                    onClick={onLeaveEvent}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                                    title="Leave Event"
+                                >
+                                    <X className="w-5 h-5" />
+                                    Leave
+                                </button>
+                            )}
+                            {(isMarshall || isAdmin) && (
+                                <button
+                                    onClick={onCancelEvent}
+                                    className="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                                    title="Cancel Event"
+                                >
+                                    <XCircle className="w-5 h-5" />
+                                    Cancel Event
+                                </button>
                             )}
                         </div>
                     </div>
@@ -281,6 +308,15 @@ window.LobbyView = ({
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
+                                                        {!p.isMarshall && p.discordUser && !p.isManual && !eventData?.started && (
+                                                            <button
+                                                                onClick={() => onTransferMarshall(p.discordUser.id)}
+                                                                className="text-purple-400 hover:text-purple-500 p-1"
+                                                                title="Transfer Marshall to this player"
+                                                            >
+                                                                <UserCheck className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                         {!p.isMarshall && (
                                                             <button
                                                                 onClick={() => onRemovePlayer(idx)}
@@ -296,7 +332,7 @@ window.LobbyView = ({
                                                     <button
                                                         onClick={() => onChangeMarshall(p.discordUser.id)}
                                                         className="text-purple-400 hover:text-purple-500 p-1"
-                                                        title="Make Marshall"
+                                                        title="Make Marshall (Admin)"
                                                     >
                                                         <RefreshCw className="w-4 h-4" />
                                                     </button>
