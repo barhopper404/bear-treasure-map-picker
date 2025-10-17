@@ -841,17 +841,30 @@ const handleRecordWinner = async (winningTeam) => {
         }
     };
 
+    
+
     // Get role icons
+    // DEBUG: Log what icons are available
+    console.log('Available icons:', Object.keys(window.Icons || {}));
+
     const getRoleIcons = (participant) => {
-        if (!participant) return [];
+        if (!participant) {
+            console.log('getRoleIcons: participant is null/undefined');
+            return [];
+        }
+        
+        console.log('getRoleIcons called for:', participant.name, participant);
         
         const icons = [];
-        
-        // Safely destructure with fallback
         const Icons = window.Icons || {};
+        
+        console.log('Icons object:', Icons);
+        console.log('Icons keys:', Object.keys(Icons));
+        
         const { Key, Heart, Music, Sword, Target, Zap, Skull, Shield, User } = Icons;
         
-        // Only render icons that exist
+        console.log('Destructured icons:', { Key: !!Key, Heart: !!Heart, Music: !!Music, Sword: !!Sword, Target: !!Target, Zap: !!Zap, Skull: !!Skull, Shield: !!Shield, User: !!User });
+        
         if (participant.lockpicker && Key) {
             icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
         }
@@ -879,6 +892,8 @@ const handleRecordWinner = async (winningTeam) => {
         if (participant.jester && User) {
             icons.push(<User key="jester" className="w-4 h-4 text-pink-500" />);
         }
+        
+        console.log('Returning icons array:', icons.length, icons);
         
         return icons;
     };
