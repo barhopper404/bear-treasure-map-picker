@@ -1,0 +1,112 @@
+NEW COLOR SCHEME - CHARCOAL WITH YELLOW, BROWN, GREEN ACCENTS
+================================================================
+
+🎨 COLOR PALETTE:
+-----------------
+Background: gray-900, gray-800 (charcoal)
+Primary Accent: yellow-400, yellow-500, yellow-600 (yellow)
+Secondary Accent: amber-600, amber-700 (brown)
+Success/Action: green-500, green-600, green-700 (green)
+Borders: yellow-500, green-500, amber-600
+Text Primary: white
+Text Secondary: gray-300, gray-400
+
+📋 FIND & REPLACE GUIDE FOR ALL COMPONENTS:
+-------------------------------------------
+
+BACKGROUNDS:
+Old: from-amber-900 via-orange-800 to-red-900
+New: from-gray-900 via-gray-800 to-gray-900
+
+Old: bg-black/40
+New: bg-gray-800/60
+
+Old: bg-black/60
+New: bg-gray-700/30
+
+BORDERS:
+Old: border-amber-600
+New: border-yellow-500
+
+Old: border-orange-600
+New: border-yellow-500 or border-green-500
+
+BUTTONS - Primary Action:
+Old: bg-amber-600 hover:bg-amber-700
+New: bg-yellow-600 hover:bg-yellow-700 text-gray-900
+
+BUTTONS - Secondary Action:
+Old: bg-orange-600 hover:bg-orange-700
+New: bg-green-600 hover:bg-green-700
+
+BUTTONS - Success:
+Old: bg-green-600 hover:bg-green-700
+New: bg-green-600 hover:bg-green-700 (keep same)
+
+BUTTONS - Danger:
+Old: bg-red-600 hover:bg-red-700
+New: bg-red-600 hover:bg-red-700 (keep same)
+
+TEXT - Headers:
+Old: text-amber-400
+New: text-yellow-400
+
+Old: text-orange-300
+New: text-yellow-300
+
+TEXT - Body:
+Old: text-orange-300
+New: text-gray-300
+
+Old: text-orange-200
+New: text-gray-200
+
+BADGES/LABELS:
+Old: bg-amber-600
+New: bg-yellow-600 text-gray-900
+
+Old: bg-orange-600
+New: bg-yellow-600 text-gray-900
+
+SPECIAL ELEMENTS:
+Old: text-amber-600 (version text)
+New: text-yellow-500
+
+Old: bg-purple-900/40 (timer settings)
+New: bg-gray-700/40
+
+Old: text-purple-300
+New: text-yellow-300
+
+Old: border-purple-600
+New: border-yellow-500
+
+TEAM COLORS (Keep These):
+Team 1: blue-900/60, blue-500, blue-300 (keep)
+Team 2: red-900/60, red-500, red-300 (keep)
+
+ROLE ICONS (Keep These):
+Lockpicker: yellow-500 (keep)
+Healer: red-500 (keep)
+Bard: purple-500 (keep)
+
+🔧 COMPONENTS TO UPDATE:
+------------------------
+1. ✅ HomeView.js - DONE (provided above)
+2. CreateEventView.js
+3. JoinEventView.js
+4. LobbyView.js
+5. CaptainChoiceView.js
+6. TeamPickingView.js
+7. MapPickingView.js
+8. CompleteView.js
+
+💡 QUICK TIPS:
+--------------
+- Replace warm colors (amber, orange, red backgrounds) with cool charcoal (gray-800, gray-900)
+- Replace amber/orange buttons with yellow (primary) or green (secondary)
+- Yellow should be the dominant accent color
+- Use brown (amber) sparingly for variety
+- Green for positive actions (start, confirm, add)
+- Keep team colors (blue/red) distinct from main theme
+- Ensure yellow text has dark background for readability (use text-gray-900 on yellow-600 buttons)

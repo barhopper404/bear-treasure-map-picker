@@ -39,6 +39,7 @@ window.ApiUtils = {
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
+
     recordWinner: async (eventId, winningTeam) => {
         const params = new URLSearchParams({
             action: 'recordWinner',
@@ -50,10 +51,50 @@ window.ApiUtils = {
         return await response.json();
     },
 
+    // ============================================
+    // ADD TO utils/api.js (after recordWinner)
+    // ============================================
+
+    getLeaderboard: async () => {
+        const params = new URLSearchParams({
+            action: 'getLeaderboard'
+        });
+        
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    getLiveEvents: async () => {
+        const params = new URLSearchParams({
+            action: 'getLiveEvents'
+        });
+        
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
     exchangeDiscordCode: async (code) => {
         const params = new URLSearchParams({
             action: 'exchangeCode',
             code: code
+        });
+        
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    getLeaderboard: async () => {
+        const params = new URLSearchParams({
+            action: 'getLeaderboard'
+        });
+        
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    getLiveEvents: async () => {
+        const params = new URLSearchParams({
+            action: 'getLiveEvents'
         });
         
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
