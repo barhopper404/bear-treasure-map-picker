@@ -7,6 +7,7 @@ window.LobbyView = ({
     linkCopied,
     spinningWheel,
     currentWheelName,
+    wheelCandidates,
     editingPlayer,
     tempRoles,
     setTempRoles,
@@ -69,6 +70,46 @@ window.LobbyView = ({
     // Check if current user is Marshall based on the isMarshall flag
     const isMarshall = currentUserParticipant?.isMarshall || false;
 
+    // Wheel rotation state for animation
+    const [wheelRotation, setWheelRotation] = React.useState(0);
+
+    // Animate wheel rotation
+    React.useEffect(() => {
+        if (spinningWheel && wheelCandidates && wheelCandidates.length > 0) {
+            let animationFrame;
+            let startTime = Date.now();
+            const totalDuration = 5000;
+
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / totalDuration, 1);
+
+                // Easing function for deceleration
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+
+                // Calculate rotation (multiple full spins + final position)
+                const totalRotations = 5 + (easeOut * 3); // 5-8 full rotations
+                const degrees = totalRotations * 360;
+
+                setWheelRotation(degrees);
+
+                if (progress < 1) {
+                    animationFrame = requestAnimationFrame(animate);
+                }
+            };
+
+            animationFrame = requestAnimationFrame(animate);
+
+            return () => {
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                }
+            };
+        } else {
+            setWheelRotation(0);
+        }
+    }, [spinningWheel, wheelCandidates]);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
             <div className="max-w-4xl mx-auto">
@@ -80,42 +121,68 @@ window.LobbyView = ({
                     </div>
                 )}
                 
-                {spinningWheel && (
-                    <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
+                {spinningWheel && wheelCandidates && wheelCandidates.length > 0 && (
+                    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
                         <div className="text-center">
-                            <h2 className="text-6xl font-bold text-yellow-400 mb-16 animate-pulse">SELECTING CAPTAIN</h2>
+                            <h2 className="text-5xl font-bold text-yellow-400 mb-12 animate-pulse">Spinning the Wheel!</h2>
 
-                            {/* Slot Machine Style Display */}
-                            <div className="relative mx-auto" style={{width: '600px'}}>
-                                {/* Top decoration */}
-                                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                                    <div className="w-0 h-0 border-l-16 border-r-16 border-b-16 border-l-transparent border-r-transparent border-b-yellow-500"></div>
+                            <div className="relative w-96 h-96 mx-auto">
+                                {/* Ticker/Pointer at top */}
+                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 z-20">
+                                    <div className="w-0 h-0 border-l-12 border-r-12 border-t-20 border-l-transparent border-r-transparent border-t-red-600 drop-shadow-lg"></div>
                                 </div>
 
-                                {/* Main slot machine frame */}
-                                <div className="bg-gradient-to-b from-yellow-600 to-yellow-700 p-8 rounded-xl border-8 border-yellow-500 shadow-2xl">
-                                    {/* Display window */}
-                                    <div className="bg-black border-4 border-yellow-400 rounded-lg overflow-hidden shadow-inner" style={{height: '200px'}}>
-                                        <div className="flex items-center justify-center h-full px-8">
-                                            <span className="text-white text-6xl font-bold tracking-wider break-words text-center">
-                                                {currentWheelName}
-                                            </span>
-                                        </div>
-                                    </div>
+                                {/* Spinning wheel */}
+                                <div
+                                    className="absolute inset-0 rounded-full transition-transform"
+                                    style={{
+                                        transform: `rotate(${wheelRotation}deg)`,
+                                        transitionDuration: '0ms'
+                                    }}
+                                >
+                                    {/* Outer rim */}
+                                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-600 border-8 border-yellow-400 shadow-2xl shadow-yellow-500/50"></div>
 
-                                    {/* Bottom decoration bars */}
-                                    <div className="flex gap-4 mt-6 justify-center">
-                                        <div className="w-20 h-3 bg-red-600 rounded-full animate-pulse"></div>
-                                        <div className="w-20 h-3 bg-red-600 rounded-full animate-pulse delay-75"></div>
-                                        <div className="w-20 h-3 bg-red-600 rounded-full animate-pulse delay-150"></div>
+                                    {/* Wheel segments with names */}
+                                    {wheelCandidates.map((candidate, index) => {
+                                        const totalCandidates = wheelCandidates.length;
+                                        const segmentAngle = 360 / totalCandidates;
+                                        const rotation = index * segmentAngle;
+
+                                        return (
+                                            <div
+                                                key={index}
+                                                className="absolute inset-0"
+                                                style={{
+                                                    transform: `rotate(${rotation}deg)`
+                                                }}
+                                            >
+                                                {/* Segment divider line */}
+                                                <div className="absolute top-0 left-1/2 w-1 h-1/2 bg-yellow-400 transform -translate-x-1/2"></div>
+
+                                                {/* Name label */}
+                                                <div
+                                                    className="absolute top-12 left-1/2 transform -translate-x-1/2"
+                                                    style={{
+                                                        transform: `translateX(-50%) rotate(${-rotation - wheelRotation}deg)`
+                                                    }}
+                                                >
+                                                    <span className="text-white font-bold text-sm whitespace-nowrap bg-gray-900/60 px-2 py-1 rounded">
+                                                        {candidate.name}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* Center hub */}
+                                    <div className="absolute inset-16 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-full border-4 border-yellow-400 flex items-center justify-center">
+                                        <span className="text-yellow-400 text-4xl font-bold">?</span>
                                     </div>
                                 </div>
-
-                                {/* Bottom glow effect */}
-                                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3/4 h-8 bg-yellow-500/30 blur-xl rounded-full"></div>
                             </div>
 
-                            <p className="text-yellow-300 text-3xl font-bold mt-16 tracking-wide">SPINNING...</p>
+                            <p className="text-yellow-300 text-2xl font-semibold mt-12">Selecting Captain...</p>
                         </div>
                     </div>
                 )}

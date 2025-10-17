@@ -1275,6 +1275,7 @@ const handleRecordWinner = async (winningTeam) => {
                 linkCopied={linkCopied}
                 spinningWheel={spinningWheel}
                 currentWheelName={currentWheelName}
+                wheelCandidates={wheelCandidates}
                 editingPlayer={editingPlayer}
                 tempRoles={tempRoles}
                 setTempRoles={setTempRoles}
