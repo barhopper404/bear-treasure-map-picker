@@ -23,23 +23,23 @@ window.TeamPickingView = ({
     const isCaptain2 = captains[1]?.name === characterName;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
+        <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
             <div className="max-w-6xl mx-auto">
                 {characterName && (
                     <div className="text-center mb-4">
-                        <span className="bg-yellow-600 text-gray-900 px-4 py-2 rounded-full text-sm font-bold">
+                        <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
                             Character: {characterName}
                         </span>
                     </div>
                 )}
-                <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-8 border-2 border-yellow-500">
-                    <h2 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Team Selection</h2>
+                <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
+                    <h2 className="text-3xl font-bold text-amber-400 mb-6 text-center">Team Selection</h2>
                     
                     {availablePlayers.length > 0 && (
                         <div className="text-center mb-4">
                             <div className={`inline-block px-6 py-3 rounded-lg ${draftTimer <= 10 ? 'bg-red-600 animate-pulse' : 'bg-yellow-600'}`}>
                                 <span className="text-white text-2xl font-bold">{draftTimer}s</span>
-                                <span className={`ml-2 ${draftTimer <= 10 ? 'text-red-200' : 'text-gray-900'}`}>to pick</span>
+                                <span className={`ml-2 ${draftTimer <= 10 ? 'text-red-200' : 'text-yellow-200'}`}>to pick</span>
                             </div>
                         </div>
                     )}
@@ -71,7 +71,7 @@ window.TeamPickingView = ({
                                         type="text"
                                         value={tempTeamName}
                                         onChange={(e) => setTempTeamName(e.target.value)}
-                                        className="w-full px-2 py-1 mb-2 bg-gray-700/30 border border-blue-400 rounded text-white text-lg"
+                                        className="w-full px-2 py-1 mb-2 bg-black/60 border border-blue-400 rounded text-white text-lg"
                                         placeholder="Team name..."
                                         autoFocus
                                     />
@@ -115,20 +115,20 @@ window.TeamPickingView = ({
                                 {teams.captain1.map((p, idx) => (
                                     <div 
                                         key={idx} 
-                                        className={`bg-gray-700/30 p-2 rounded text-white flex justify-between items-center transition-all ${
+                                        className={`bg-black/60 p-2 rounded text-white flex justify-between items-center transition-all ${
                                             justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
                                         }`}
                                     >
                                         <span>{p.name}</span>
-                                        <div className="flex gap-1 flex-wrap">{getRoleIcons(p)}</div>
+                                        <div className="flex gap-1">{getRoleIcons(p)}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                         
                         {/* Available Players */}
-                        <div className="bg-gray-700/30 p-4 rounded border-2 border-yellow-500">
-                            <h3 className="text-xl text-yellow-300 mb-3 text-center">Available Players</h3>
+                        <div className="bg-black/60 p-4 rounded border-2 border-amber-600">
+                            <h3 className="text-xl text-orange-300 mb-3 text-center">Available Players</h3>
                             {availablePlayers.length === 0 ? (
                                 <div className="text-center text-gray-400">All picked!</div>
                             ) : (
@@ -140,12 +140,12 @@ window.TeamPickingView = ({
                                             disabled={!isCurrentCaptain || isDrafting}
                                             className={`w-full p-2 rounded text-white flex justify-between items-center transition-colors ${
                                                 isCurrentCaptain && !isDrafting
-                                                    ? 'bg-yellow-600 hover:bg-yellow-700 cursor-pointer text-gray-900 font-bold' 
+                                                    ? 'bg-amber-600 hover:bg-amber-700 cursor-pointer' 
                                                     : 'bg-gray-700 cursor-not-allowed opacity-50'
                                             }`}
                                         >
                                             <span>{p.name}</span>
-                                            <div className="flex gap-1 flex-wrap">{getRoleIcons(p)}</div>
+                                            <div className="flex gap-1">{getRoleIcons(p)}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -160,7 +160,7 @@ window.TeamPickingView = ({
                                         type="text"
                                         value={tempTeamName}
                                         onChange={(e) => setTempTeamName(e.target.value)}
-                                        className="w-full px-2 py-1 mb-2 bg-gray-700/30 border border-red-400 rounded text-white text-lg"
+                                        className="w-full px-2 py-1 mb-2 bg-black/60 border border-red-400 rounded text-white text-lg"
                                         placeholder="Team name..."
                                         autoFocus
                                     />
@@ -204,12 +204,12 @@ window.TeamPickingView = ({
                                 {teams.captain2.map((p, idx) => (
                                     <div 
                                         key={idx} 
-                                        className={`bg-gray-700/30 p-2 rounded text-white flex justify-between items-center transition-all ${
+                                        className={`bg-black/60 p-2 rounded text-white flex justify-between items-center transition-all ${
                                             justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
                                         }`}
                                     >
                                         <span>{p.name}</span>
-                                        <div className="flex gap-1 flex-wrap">{getRoleIcons(p)}</div>
+                                        <div className="flex gap-1">{getRoleIcons(p)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -217,7 +217,7 @@ window.TeamPickingView = ({
                     </div>
                 </div>
             </div>
-            <div className="text-center mt-4 text-yellow-500 text-sm">
+            <div className="text-center mt-4 text-amber-600 text-sm">
                 {window.AppConfig.VERSION}
             </div>
         </div>

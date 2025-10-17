@@ -20,18 +20,6 @@ window.LobbyView = ({
     setNewPlayerHealer,
     newPlayerBard,
     setNewPlayerBard,
-    newPlayerMeleeDPS,
-    setNewPlayerMeleeDPS,
-    newPlayerRangedDPS,
-    setNewPlayerRangedDPS,
-    newPlayerTamer,
-    setNewPlayerTamer,
-    newPlayerSummoner,
-    setNewPlayerSummoner,
-    newPlayerTank,
-    setNewPlayerTank,
-    newPlayerJester,
-    setNewPlayerJester,
     captainChoiceTimerSetting,
     setCaptainChoiceTimerSetting,
     draftTimerSetting,
@@ -53,15 +41,15 @@ window.LobbyView = ({
     setEditingPlayer,
     getRoleIcons
 }) => {
-    const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User } = window.Icons;
+    const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash } = window.Icons;
     const isMarshall = eventData?.participants?.[0]?.name === characterName;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
+        <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
             <div className="max-w-4xl mx-auto">
                 {characterName && (
                     <div className="text-center mb-4">
-                        <span className="bg-yellow-600 text-gray-900 px-4 py-2 rounded-full text-sm font-bold">
+                        <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
                             Character: {characterName}
                         </span>
                     </div>
@@ -69,23 +57,23 @@ window.LobbyView = ({
                 
                 {spinningWheel && (
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 rounded-lg border-4 border-yellow-500 text-center">
-                            <h2 className="text-4xl font-bold text-yellow-400 mb-8">Spinning the Wheel!</h2>
-                            <div className="w-64 h-64 mx-auto mb-8 bg-yellow-600 rounded-full flex items-center justify-center border-8 border-yellow-400 animate-spin">
-                                <div className="bg-gray-900/60 w-48 h-48 rounded-full flex items-center justify-center">
+                        <div className="bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-12 rounded-lg border-4 border-amber-600 text-center">
+                            <h2 className="text-4xl font-bold text-amber-400 mb-8">Spinning the Wheel!</h2>
+                            <div className="w-64 h-64 mx-auto mb-8 bg-amber-600 rounded-full flex items-center justify-center border-8 border-amber-400 animate-spin">
+                                <div className="bg-black/60 w-48 h-48 rounded-full flex items-center justify-center">
                                     <span className="text-white text-3xl font-bold">{currentWheelName}</span>
                                 </div>
                             </div>
-                            <p className="text-yellow-300 text-xl">Selecting Captain...</p>
+                            <p className="text-orange-300 text-xl">Selecting Captain...</p>
                         </div>
                     </div>
                 )}
                 
-                <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg p-8 border-2 border-yellow-500">
+                <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-3xl font-bold text-yellow-400">Event Lobby</h2>
+                        <h2 className="text-3xl font-bold text-amber-400">Event Lobby</h2>
                         <div className="text-right">
-                            <div className="text-gray-300 text-sm">Event ID</div>
+                            <div className="text-orange-300 text-sm">Event ID</div>
                             <div className="text-2xl font-bold text-white">{eventId}</div>
                             {eventData?.started && (
                                 <div className="text-red-400 text-sm mt-1">🔒 LOCKED</div>
@@ -95,7 +83,7 @@ window.LobbyView = ({
                     
                     <button 
                         onClick={onCopyEventLink} 
-                        className="w-full mb-6 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full mb-6 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                         {linkCopied ? (
                             <>
@@ -111,13 +99,13 @@ window.LobbyView = ({
                     </button>
                     
                     <div className="mb-6">
-                        <h3 className="text-xl text-yellow-300 mb-4 flex items-center gap-2">
+                        <h3 className="text-xl text-orange-300 mb-4 flex items-center gap-2">
                             <Users className="w-6 h-6" />
                             Participants ({eventData?.participants?.length || 0})
                         </h3>
                         <div className="space-y-2">
                             {eventData?.participants?.map((p, idx) => (
-                                <div key={idx} className="bg-gray-700/30 p-4 rounded border border-yellow-500">
+                                <div key={idx} className="bg-black/60 p-4 rounded border border-amber-600">
                                     {editingPlayer === idx ? (
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-center mb-2">
@@ -132,106 +120,46 @@ window.LobbyView = ({
                                                     Cancel
                                                 </button>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={tempRoles.wantsCaptain} 
                                                         onChange={(e) => setTempRoles({ ...tempRoles, wantsCaptain: e.target.checked })} 
-                                                        className="w-4 h-4" 
+                                                        className="w-5 h-5" 
                                                     />
-                                                    <Shield className="w-4 h-4 text-yellow-400" />
-                                                    <span className="text-sm">Captain</span>
+                                                    <Shield className="w-5 h-5" />
+                                                    Wants to be Captain
                                                 </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
+                                                <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={tempRoles.lockpicker} 
                                                         onChange={(e) => setTempRoles({ ...tempRoles, lockpicker: e.target.checked })} 
-                                                        className="w-4 h-4" 
+                                                        className="w-5 h-5" 
                                                     />
-                                                    <Key className="w-4 h-4 text-yellow-500" />
-                                                    <span className="text-sm">Lockpicker</span>
+                                                    <Key className="w-5 h-5 text-yellow-500" />
+                                                    Lockpicker
                                                 </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
+                                                <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={tempRoles.healer} 
                                                         onChange={(e) => setTempRoles({ ...tempRoles, healer: e.target.checked })} 
-                                                        className="w-4 h-4" 
+                                                        className="w-5 h-5" 
                                                     />
-                                                    <Heart className="w-4 h-4 text-red-500" />
-                                                    <span className="text-sm">Healer</span>
+                                                    <Heart className="w-5 h-5 text-red-500" />
+                                                    Healer
                                                 </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
+                                                <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={tempRoles.bard} 
                                                         onChange={(e) => setTempRoles({ ...tempRoles, bard: e.target.checked })} 
-                                                        className="w-4 h-4" 
+                                                        className="w-5 h-5" 
                                                     />
-                                                    <Music className="w-4 h-4 text-purple-500" />
-                                                    <span className="text-sm">Bard</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={tempRoles.meleeDPS} 
-                                                        onChange={(e) => setTempRoles({ ...tempRoles, meleeDPS: e.target.checked })} 
-                                                        className="w-4 h-4" 
-                                                    />
-                                                    <Sword className="w-4 h-4 text-orange-500" />
-                                                    <span className="text-sm">Melee DPS</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={tempRoles.rangedDPS} 
-                                                        onChange={(e) => setTempRoles({ ...tempRoles, rangedDPS: e.target.checked })} 
-                                                        className="w-4 h-4" 
-                                                    />
-                                                    <Target className="w-4 h-4 text-blue-500" />
-                                                    <span className="text-sm">Ranged DPS</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={tempRoles.tamer} 
-                                                        onChange={(e) => setTempRoles({ ...tempRoles, tamer: e.target.checked })} 
-                                                        className="w-4 h-4" 
-                                                    />
-                                                    <Zap className="w-4 h-4 text-green-500" />
-                                                    <span className="text-sm">Tamer</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={tempRoles.summoner} 
-                                                        onChange={(e) => setTempRoles({ ...tempRoles, summoner: e.target.checked })} 
-                                                        className="w-4 h-4" 
-                                                    />
-                                                    <Skull className="w-4 h-4 text-purple-400" />
-                                                    <span className="text-sm">Summoner</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={tempRoles.tank} 
-                                                        onChange={(e) => setTempRoles({ ...tempRoles, tank: e.target.checked })} 
-                                                        className="w-4 h-4" 
-                                                    />
-                                                    <Shield className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-sm">Tank</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={tempRoles.jester} 
-                                                        onChange={(e) => setTempRoles({ ...tempRoles, jester: e.target.checked })} 
-                                                        className="w-4 h-4" 
-                                                    />
-                                                    <User className="w-4 h-4 text-pink-500" />
-                                                    <span className="text-sm">Jester</span>
+                                                    <Music className="w-5 h-5 text-purple-500" />
+                                                    Bard
                                                 </label>
                                             </div>
                                             <button 
@@ -255,19 +183,19 @@ window.LobbyView = ({
                                                 </div>
                                                 {p.isMarshall && <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">MARSHALL</span>}
                                                 {p.wantsCaptain && (
-                                                    <span className="bg-yellow-600 text-gray-900 text-xs px-2 py-1 rounded flex items-center gap-1">
+                                                    <span className="bg-amber-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
                                                         <Shield className="w-3 h-3" />
                                                         CAPTAIN
                                                     </span>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <div className="flex gap-2 flex-wrap">{getRoleIcons(p)}</div>
+                                                <div className="flex gap-2">{getRoleIcons(p)}</div>
                                                 {isMarshall && (
                                                     <div className="flex gap-2">
                                                         <button 
                                                             onClick={() => onStartEditingRoles(idx, p)} 
-                                                            className="text-yellow-300 hover:text-yellow-400 p-1" 
+                                                            className="text-orange-300 hover:text-orange-400 p-1" 
                                                             title="Edit roles"
                                                         >
                                                             <Edit className="w-4 h-4" />
@@ -307,8 +235,8 @@ window.LobbyView = ({
                     {/* Add Player Modal */}
                     {showAddPlayer && (
                         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8 rounded-lg border-4 border-yellow-500 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-                                <h3 className="text-2xl font-bold text-yellow-400 mb-4">Add Player Manually</h3>
+                            <div className="bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8 rounded-lg border-4 border-amber-600 max-w-md w-full mx-4">
+                                <h3 className="text-2xl font-bold text-amber-400 mb-4">Add Player Manually</h3>
                                 
                                 {error && (
                                     <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
@@ -318,121 +246,59 @@ window.LobbyView = ({
                                 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-gray-300 mb-2">Character Name</label>
+                                        <label className="block text-orange-300 mb-2">Character Name</label>
                                         <input 
                                             type="text" 
                                             value={newPlayerName}
                                             onChange={(e) => setNewPlayerName(e.target.value)}
-                                            className="w-full px-4 py-2 bg-gray-700/30 border border-yellow-500 rounded text-white" 
+                                            className="w-full px-4 py-2 bg-black/60 border border-amber-600 rounded text-white" 
                                             placeholder="Enter player name"
                                             autoFocus
                                         />
                                     </div>
                                     
-                                    <div>
-                                        <label className="block text-gray-300 mb-3 font-bold">Roles</label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-yellow-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerCaptain}
-                                                    onChange={(e) => setNewPlayerCaptain(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Shield className="w-4 h-4 text-yellow-400" />
-                                                <span className="text-sm">Captain</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-yellow-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerLockpicker}
-                                                    onChange={(e) => setNewPlayerLockpicker(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Key className="w-4 h-4 text-yellow-500" />
-                                                <span className="text-sm">Lockpicker</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerHealer}
-                                                    onChange={(e) => setNewPlayerHealer(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Heart className="w-4 h-4 text-red-500" />
-                                                <span className="text-sm">Healer</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerBard}
-                                                    onChange={(e) => setNewPlayerBard(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Music className="w-4 h-4 text-purple-500" />
-                                                <span className="text-sm">Bard</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerMeleeDPS}
-                                                    onChange={(e) => setNewPlayerMeleeDPS(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Sword className="w-4 h-4 text-orange-500" />
-                                                <span className="text-sm">Melee DPS</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerRangedDPS}
-                                                    onChange={(e) => setNewPlayerRangedDPS(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Target className="w-4 h-4 text-blue-500" />
-                                                <span className="text-sm">Ranged DPS</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerTamer}
-                                                    onChange={(e) => setNewPlayerTamer(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Zap className="w-4 h-4 text-green-500" />
-                                                <span className="text-sm">Tamer</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerSummoner}
-                                                    onChange={(e) => setNewPlayerSummoner(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Skull className="w-4 h-4 text-purple-400" />
-                                                <span className="text-sm">Summoner</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerTank}
-                                                    onChange={(e) => setNewPlayerTank(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <Shield className="w-4 h-4 text-gray-400" />
-                                                <span className="text-sm">Tank</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 text-gray-300 cursor-pointer bg-gray-700/20 p-2 rounded border border-gray-600 hover:border-green-500">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={newPlayerJester}
-                                                    onChange={(e) => setNewPlayerJester(e.target.checked)}
-                                                    className="w-4 h-4" 
-                                                />
-                                                <User className="w-4 h-4 text-pink-500" />
-                                                <span className="text-sm">Jester</span>
-                                            </label>
-                                        </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-orange-300 mb-2">Roles</label>
+                                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={newPlayerCaptain}
+                                                onChange={(e) => setNewPlayerCaptain(e.target.checked)}
+                                                className="w-5 h-5" 
+                                            />
+                                            <Shield className="w-5 h-5" />
+                                            Captain
+                                        </label>
+                                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={newPlayerLockpicker}
+                                                onChange={(e) => setNewPlayerLockpicker(e.target.checked)}
+                                                className="w-5 h-5" 
+                                            />
+                                            <Key className="w-5 h-5 text-yellow-500" />
+                                            Lockpicker
+                                        </label>
+                                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={newPlayerHealer}
+                                                onChange={(e) => setNewPlayerHealer(e.target.checked)}
+                                                className="w-5 h-5" 
+                                            />
+                                            <Heart className="w-5 h-5 text-red-500" />
+                                            Healer
+                                        </label>
+                                        <label className="flex items-center gap-2 text-orange-300 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={newPlayerBard}
+                                                onChange={(e) => setNewPlayerBard(e.target.checked)}
+                                                className="w-5 h-5" 
+                                            />
+                                            <Music className="w-5 h-5 text-purple-500" />
+                                            Bard
+                                        </label>
                                     </div>
                                     
                                     <div className="flex gap-4 mt-6">
@@ -451,12 +317,6 @@ window.LobbyView = ({
                                                 setNewPlayerLockpicker(false);
                                                 setNewPlayerHealer(false);
                                                 setNewPlayerBard(false);
-                                                setNewPlayerMeleeDPS(false);
-                                                setNewPlayerRangedDPS(false);
-                                                setNewPlayerTamer(false);
-                                                setNewPlayerSummoner(false);
-                                                setNewPlayerTank(false);
-                                                setNewPlayerJester(false);
                                             }}
                                             disabled={loading}
                                             className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
@@ -472,11 +332,11 @@ window.LobbyView = ({
                     {/* Timer Settings */}
                     {isMarshall && !eventData?.started && (
                         <>
-                            <div className="mb-6 bg-gray-700/40 p-4 rounded border border-yellow-500">
-                                <h3 className="text-lg text-yellow-300 mb-3 font-bold">⚙️ Timer Settings</h3>
+                            <div className="mb-6 bg-purple-900/40 p-4 rounded border border-purple-600">
+                                <h3 className="text-lg text-purple-300 mb-3 font-bold">⚙️ Timer Settings</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-gray-200 text-sm mb-2">
+                                        <label className="block text-purple-200 text-sm mb-2">
                                             Captain Choice Timer (10-300s)
                                         </label>
                                         <input 
@@ -485,12 +345,12 @@ window.LobbyView = ({
                                             max="300"
                                             value={captainChoiceTimerSetting}
                                             onChange={(e) => setCaptainChoiceTimerSetting(parseInt(e.target.value) || 45)}
-                                            className="w-full px-3 py-2 bg-gray-700/30 border border-yellow-500 rounded text-white"
+                                            className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
                                         />
-                                        <p className="text-yellow-300 text-xs mt-1">Currently: {captainChoiceTimerSetting}s</p>
+                                        <p className="text-purple-300 text-xs mt-1">Currently: {captainChoiceTimerSetting}s</p>
                                     </div>
                                     <div>
-                                        <label className="block text-gray-200 text-sm mb-2">
+                                        <label className="block text-purple-200 text-sm mb-2">
                                             Draft Timer (10-300s)
                                         </label>
                                         <input 
@@ -499,18 +359,18 @@ window.LobbyView = ({
                                             max="300"
                                             value={draftTimerSetting}
                                             onChange={(e) => setDraftTimerSetting(parseInt(e.target.value) || 60)}
-                                            className="w-full px-3 py-2 bg-gray-700/30 border border-yellow-500 rounded text-white"
+                                            className="w-full px-3 py-2 bg-black/60 border border-purple-600 rounded text-white"
                                         />
-                                        <p className="text-yellow-300 text-xs mt-1">Currently: {draftTimerSetting}s</p>
+                                        <p className="text-purple-300 text-xs mt-1">Currently: {draftTimerSetting}s</p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="mb-6 bg-gray-700/40 p-4 rounded border border-green-500">
-                                <h3 className="text-lg text-green-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
+                            <div className="mb-6 bg-orange-900/40 p-4 rounded border border-orange-600">
+                                <h3 className="text-lg text-orange-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-gray-200 text-sm mb-2">
+                                        <label className="block text-orange-200 text-sm mb-2">
                                             Total Maps (e.g., 10+10=20)
                                         </label>
                                         <input 
@@ -519,21 +379,21 @@ window.LobbyView = ({
                                             max="100"
                                             value={totalMaps}
                                             onChange={(e) => setTotalMaps(parseInt(e.target.value) || 20)}
-                                            className="w-full px-3 py-2 bg-gray-700/30 border border-green-500 rounded text-white"
+                                            className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white"
                                         />
-                                        <p className="text-green-300 text-xs mt-1">Total treasure maps to complete</p>
+                                        <p className="text-orange-300 text-xs mt-1">Total treasure maps to complete</p>
                                     </div>
                                     <div>
-                                        <label className="block text-gray-200 text-sm mb-2">
+                                        <label className="block text-orange-200 text-sm mb-2">
                                             Map Coordinates (Optional)
                                         </label>
                                         <textarea 
                                             value={mapCoords}
                                             onChange={(e) => setMapCoords(e.target.value)}
                                             placeholder="1863,1991|2456,1234|3789,2456"
-                                            className="w-full px-3 py-2 bg-gray-700/30 border border-green-500 rounded text-white h-24 font-mono text-sm"
+                                            className="w-full px-3 py-2 bg-black/60 border border-orange-600 rounded text-white h-24 font-mono text-sm"
                                         />
-                                        <p className="text-green-300 text-xs mt-1">
+                                        <p className="text-orange-300 text-xs mt-1">
                                             Format: XXXX,YYYY|XXXX,YYYY|XXXX,YYYY (separated by |)
                                         </p>
                                     </div>
@@ -558,7 +418,7 @@ window.LobbyView = ({
                     )}
                 </div>
             </div>
-            <div className="text-center mt-4 text-yellow-500 text-sm">
+            <div className="text-center mt-4 text-amber-600 text-sm">
                 {window.AppConfig.VERSION}
             </div>
         </div>
