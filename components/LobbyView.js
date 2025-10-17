@@ -126,13 +126,13 @@ window.LobbyView = ({
                         <div className="text-center">
                             <h2 className="text-5xl font-bold text-yellow-400 mb-12 animate-pulse">Spinning the Wheel!</h2>
 
-                            <div className="relative w-96 h-96 mx-auto">
-                                {/* Ticker/Pointer at top */}
-                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 z-20">
-                                    <div className="w-0 h-0 border-l-12 border-r-12 border-t-20 border-l-transparent border-r-transparent border-t-red-600 drop-shadow-lg"></div>
+                            <div className="relative w-[500px] h-[500px] mx-auto">
+                                {/* Ticker/Pointer at right */}
+                                <div className="absolute top-1/2 right-0 transform translate-x-8 -translate-y-1/2 z-20">
+                                    <div className="w-0 h-0 border-t-[20px] border-b-[20px] border-l-[30px] border-t-transparent border-b-transparent border-l-green-500 drop-shadow-2xl"></div>
                                 </div>
 
-                                {/* Spinning wheel */}
+                                {/* Spinning wheel container */}
                                 <div
                                     className="absolute inset-0 rounded-full transition-transform"
                                     style={{
@@ -140,34 +140,85 @@ window.LobbyView = ({
                                         transitionDuration: '0ms'
                                     }}
                                 >
-                                    {/* Outer rim */}
-                                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-600 border-8 border-yellow-400 shadow-2xl shadow-yellow-500/50"></div>
+                                    {/* Wheel segments with alternating colors */}
+                                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 500 500">
+                                        <defs>
+                                            {wheelCandidates.map((_, index) => {
+                                                const totalCandidates = wheelCandidates.length;
+                                                const segmentAngle = 360 / totalCandidates;
+                                                const rotation = index * segmentAngle;
 
-                                    {/* Wheel segments with names */}
+                                                return (
+                                                    <filter key={`shadow-${index}`} id={`shadow-${index}`}>
+                                                        <feDropShadow dx="0" dy="0" stdDeviation="2" floodOpacity="0.3"/>
+                                                    </filter>
+                                                );
+                                            })}
+                                        </defs>
+
+                                        {wheelCandidates.map((candidate, index) => {
+                                            const totalCandidates = wheelCandidates.length;
+                                            const segmentAngle = 360 / totalCandidates;
+                                            const startAngle = (index * segmentAngle - 90) * (Math.PI / 180);
+                                            const endAngle = ((index + 1) * segmentAngle - 90) * (Math.PI / 180);
+
+                                            const outerRadius = 250;
+                                            const innerRadius = 80;
+
+                                            const x1 = 250 + innerRadius * Math.cos(startAngle);
+                                            const y1 = 250 + innerRadius * Math.sin(startAngle);
+                                            const x2 = 250 + outerRadius * Math.cos(startAngle);
+                                            const y2 = 250 + outerRadius * Math.sin(startAngle);
+                                            const x3 = 250 + outerRadius * Math.cos(endAngle);
+                                            const y3 = 250 + outerRadius * Math.sin(endAngle);
+                                            const x4 = 250 + innerRadius * Math.cos(endAngle);
+                                            const y4 = 250 + innerRadius * Math.sin(endAngle);
+
+                                            const largeArc = segmentAngle > 180 ? 1 : 0;
+
+                                            // Alternating green shades
+                                            const colors = ['#65a30d', '#84cc16', '#a3e635', '#bef264'];
+                                            const segmentColor = colors[index % colors.length];
+
+                                            return (
+                                                <path
+                                                    key={index}
+                                                    d={`M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1}`}
+                                                    fill={segmentColor}
+                                                    stroke="#fbbf24"
+                                                    strokeWidth="2"
+                                                    filter={`url(#shadow-${index})`}
+                                                />
+                                            );
+                                        })}
+                                    </svg>
+
+                                    {/* Name labels positioned on segments */}
                                     {wheelCandidates.map((candidate, index) => {
                                         const totalCandidates = wheelCandidates.length;
                                         const segmentAngle = 360 / totalCandidates;
-                                        const rotation = index * segmentAngle;
+                                        const rotation = index * segmentAngle + (segmentAngle / 2);
+                                        const textRadius = 165;
 
                                         return (
                                             <div
                                                 key={index}
-                                                className="absolute inset-0"
+                                                className="absolute top-1/2 left-1/2 origin-left"
                                                 style={{
-                                                    transform: `rotate(${rotation}deg)`
+                                                    transform: `rotate(${rotation}deg) translateX(${textRadius}px)`,
+                                                    width: '1px',
+                                                    height: '1px'
                                                 }}
                                             >
-                                                {/* Segment divider line */}
-                                                <div className="absolute top-0 left-1/2 w-1 h-1/2 bg-yellow-400 transform -translate-x-1/2"></div>
-
-                                                {/* Name label */}
                                                 <div
-                                                    className="absolute top-12 left-1/2 transform -translate-x-1/2"
+                                                    className="absolute"
                                                     style={{
-                                                        transform: `translateX(-50%) rotate(${-rotation - wheelRotation}deg)`
+                                                        transform: `rotate(${-rotation - wheelRotation}deg) translateX(-50%) translateY(-50%)`,
+                                                        left: '0',
+                                                        top: '0'
                                                     }}
                                                 >
-                                                    <span className="text-white font-bold text-sm whitespace-nowrap bg-gray-900/60 px-2 py-1 rounded">
+                                                    <span className="text-gray-900 font-bold text-xl whitespace-nowrap drop-shadow-lg">
                                                         {candidate.name}
                                                     </span>
                                                 </div>
@@ -176,8 +227,11 @@ window.LobbyView = ({
                                     })}
 
                                     {/* Center hub */}
-                                    <div className="absolute inset-16 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-full border-4 border-yellow-400 flex items-center justify-center">
-                                        <span className="text-yellow-400 text-4xl font-bold">?</span>
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-br from-yellow-500 via-yellow-400 to-yellow-500 rounded-full border-8 border-white shadow-2xl flex items-center justify-center">
+                                        <div className="text-center">
+                                            <div className="text-gray-800 font-bold text-xl mb-1">BEAR</div>
+                                            <div className="text-gray-700 text-xs">Treasure Map</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
