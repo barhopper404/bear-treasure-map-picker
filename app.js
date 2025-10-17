@@ -42,19 +42,6 @@ function TreasureMapTeamPicker() {
     const [newPlayerLockpicker, setNewPlayerLockpicker] = useState(false);
     const [newPlayerHealer, setNewPlayerHealer] = useState(false);
     const [newPlayerBard, setNewPlayerBard] = useState(false);
-    const [isMeleeDPS, setIsMeleeDPS] = useState(false);
-    const [isRangedDPS, setIsRangedDPS] = useState(false);
-    const [isTamer, setIsTamer] = useState(false);
-    const [isSummoner, setIsSummoner] = useState(false);
-    const [isTank, setIsTank] = useState(false);
-    const [isJester, setIsJester] = useState(false);
-    const [newPlayerMeleeDPS, setNewPlayerMeleeDPS] = useState(false);
-    const [newPlayerRangedDPS, setNewPlayerRangedDPS] = useState(false);
-    const [newPlayerTamer, setNewPlayerTamer] = useState(false);
-    const [newPlayerSummoner, setNewPlayerSummoner] = useState(false);
-    const [newPlayerTank, setNewPlayerTank] = useState(false);
-    const [newPlayerJester, setNewPlayerJester] = useState(false);
-
     
     // Map picking state
     const [parsedMaps, setParsedMaps] = useState([]);
@@ -192,12 +179,6 @@ function TreasureMapTeamPicker() {
             lockpicker: isLockpicker,
             healer: isHealer,
             bard: isBard,
-            meleeDPS: isMeleeDPS,        // ADD
-            rangedDPS: isRangedDPS,      // ADD
-            tamer: isTamer,              // ADD
-            summoner: isSummoner,        // ADD
-            tank: isTank,                // ADD
-            jester: isJester,
             isMarshall: true
         };
 
@@ -236,12 +217,6 @@ function TreasureMapTeamPicker() {
             lockpicker: isLockpicker,
             healer: isHealer,
             bard: isBard,
-            meleeDPS: isMeleeDPS,        // ADD
-            rangedDPS: isRangedDPS,      // ADD
-            tamer: isTamer,              // ADD
-            summoner: isSummoner,        // ADD
-            tank: isTank,                // ADD
-            jester: isJester,            // ADD
             isMarshall: false
         };
 
@@ -322,10 +297,6 @@ function TreasureMapTeamPicker() {
         }, intervalTime);
     };
 
-    const handleContinueFromReveal = () => {
-        setView('captainChoice');
-    };
-
     // Start event and select captains
     const handleStartEvent = async () => {
         const potentialCaptains = eventData.participants.filter(p => p.wantsCaptain);
@@ -365,7 +336,7 @@ function TreasureMapTeamPicker() {
                         setPickingCaptain(firstPicker);
                         setAvailablePlayers(nonCaptains);
                         setTeams({ captain1: [], captain2: [] });
-                        setView('captainReveal'); // CHANGED from 'captainChoice'
+                        setView('captainChoice');
                     } catch (err) {
                         setError('Error starting event: ' + err.message);
                     }
@@ -709,12 +680,6 @@ const handleRecordWinner = async (winningTeam) => {
             lockpicker: newPlayerLockpicker,
             healer: newPlayerHealer,
             bard: newPlayerBard,
-            meleeDPS: newPlayerMeleeDPS,        // ADD
-            rangedDPS: newPlayerRangedDPS,      // ADD
-            tamer: newPlayerTamer,              // ADD
-            summoner: newPlayerSummoner,        // ADD
-            tank: newPlayerTank,                // ADD
-            jester: newPlayerJester,            // ADD
             isMarshall: false,
             isManual: true
         };
@@ -730,12 +695,6 @@ const handleRecordWinner = async (winningTeam) => {
                 setNewPlayerLockpicker(false);
                 setNewPlayerHealer(false);
                 setNewPlayerBard(false);
-                setNewPlayerMeleeDPS(false);        // ADD
-                setNewPlayerRangedDPS(false);       // ADD
-                setNewPlayerTamer(false);           // ADD
-                setNewPlayerSummoner(false);        // ADD
-                setNewPlayerTank(false);            // ADD
-                setNewPlayerJester(false);          // ADD
             } else {
                 setError('Failed to add player: ' + result.error);
             }
@@ -810,13 +769,7 @@ const handleRecordWinner = async (winningTeam) => {
             wantsCaptain: participant.wantsCaptain,
             lockpicker: participant.lockpicker,
             healer: participant.healer,
-            bard: participant.bard,
-            meleeDPS: participant.meleeDPS || false,        // ADD
-            rangedDPS: participant.rangedDPS || false,      // ADD
-            tamer: participant.tamer || false,              // ADD
-            summoner: participant.summoner || false,        // ADD
-            tank: participant.tank || false,                // ADD
-            jester: participant.jester || false             // ADD
+            bard: participant.bard
         });
     };
 
@@ -841,60 +794,13 @@ const handleRecordWinner = async (winningTeam) => {
         }
     };
 
-    
-
     // Get role icons
-    // DEBUG: Log what icons are available
-    console.log('Available icons:', Object.keys(window.Icons || {}));
-
     const getRoleIcons = (participant) => {
-        if (!participant) {
-            console.log('getRoleIcons: participant is null/undefined');
-            return [];
-        }
-        
-        console.log('getRoleIcons called for:', participant.name, participant);
-        
+        const { Key, Heart, Music } = window.Icons;
         const icons = [];
-        const Icons = window.Icons || {};
-        
-        console.log('Icons object:', Icons);
-        console.log('Icons keys:', Object.keys(Icons));
-        
-        const { Key, Heart, Music, Sword, Target, Zap, Skull, Shield, User } = Icons;
-        
-        console.log('Destructured icons:', { Key: !!Key, Heart: !!Heart, Music: !!Music, Sword: !!Sword, Target: !!Target, Zap: !!Zap, Skull: !!Skull, Shield: !!Shield, User: !!User });
-        
-        if (participant.lockpicker && Key) {
-            icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
-        }
-        if (participant.healer && Heart) {
-            icons.push(<Heart key="heart" className="w-4 h-4 text-red-500" />);
-        }
-        if (participant.bard && Music) {
-            icons.push(<Music key="music" className="w-4 h-4 text-purple-500" />);
-        }
-        if (participant.meleeDPS && Sword) {
-            icons.push(<Sword key="melee" className="w-4 h-4 text-orange-500" />);
-        }
-        if (participant.rangedDPS && Target) {
-            icons.push(<Target key="ranged" className="w-4 h-4 text-blue-500" />);
-        }
-        if (participant.tamer && Zap) {
-            icons.push(<Zap key="tamer" className="w-4 h-4 text-green-500" />);
-        }
-        if (participant.summoner && Skull) {
-            icons.push(<Skull key="summoner" className="w-4 h-4 text-purple-400" />);
-        }
-        if (participant.tank && Shield) {
-            icons.push(<Shield key="tank" className="w-4 h-4 text-gray-400" />);
-        }
-        if (participant.jester && User) {
-            icons.push(<User key="jester" className="w-4 h-4 text-pink-500" />);
-        }
-        
-        console.log('Returning icons array:', icons.length, icons);
-        
+        if (participant.lockpicker) icons.push(<Key key="key" className="w-4 h-4 text-yellow-500" />);
+        if (participant.healer) icons.push(<Heart key="heart" className="w-4 h-4 text-red-500" />);
+        if (participant.bard) icons.push(<Music key="music" className="w-4 h-4 text-purple-500" />);
         return icons;
     };
 
@@ -923,18 +829,6 @@ const handleRecordWinner = async (winningTeam) => {
                 setIsHealer={setIsHealer}
                 isBard={isBard}
                 setIsBard={setIsBard}
-                isMeleeDPS={isMeleeDPS}              // ADD
-                setIsMeleeDPS={setIsMeleeDPS}        // ADD
-                isRangedDPS={isRangedDPS}            // ADD
-                setIsRangedDPS={setIsRangedDPS}      // ADD
-                isTamer={isTamer}                    // ADD
-                setIsTamer={setIsTamer}              // ADD
-                isSummoner={isSummoner}              // ADD
-                setIsSummoner={setIsSummoner}        // ADD
-                isTank={isTank}                      // ADD
-                setIsTank={setIsTank}                // ADD
-                isJester={isJester}                  // ADD
-                setIsJester={setIsJester}            // ADD
                 error={error}
                 loading={loading}
                 onCreateEvent={handleCreateEvent}
@@ -960,18 +854,6 @@ const handleRecordWinner = async (winningTeam) => {
                 setIsHealer={setIsHealer}
                 isBard={isBard}
                 setIsBard={setIsBard}
-                isMeleeDPS={isMeleeDPS}              // ADD
-                setIsMeleeDPS={setIsMeleeDPS}        // ADD
-                isRangedDPS={isRangedDPS}            // ADD
-                setIsRangedDPS={setIsRangedDPS}      // ADD
-                isTamer={isTamer}                    // ADD
-                setIsTamer={setIsTamer}              // ADD
-                isSummoner={isSummoner}              // ADD
-                setIsSummoner={setIsSummoner}        // ADD
-                isTank={isTank}                      // ADD
-                setIsTank={setIsTank}                // ADD
-                isJester={isJester}                  // ADD
-                setIsJester={setIsJester}            // ADD
                 error={error}
                 loading={loading}
                 onJoinEvent={handleJoinEvent}
@@ -1005,18 +887,6 @@ const handleRecordWinner = async (winningTeam) => {
                 setNewPlayerHealer={setNewPlayerHealer}
                 newPlayerBard={newPlayerBard}
                 setNewPlayerBard={setNewPlayerBard}
-                newPlayerMeleeDPS={newPlayerMeleeDPS}              // ADD
-                setNewPlayerMeleeDPS={setNewPlayerMeleeDPS}        // ADD
-                newPlayerRangedDPS={newPlayerRangedDPS}            // ADD
-                setNewPlayerRangedDPS={setNewPlayerRangedDPS}      // ADD
-                newPlayerTamer={newPlayerTamer}                    // ADD
-                setNewPlayerTamer={setNewPlayerTamer}              // ADD
-                newPlayerSummoner={newPlayerSummoner}              // ADD
-                setNewPlayerSummoner={setNewPlayerSummoner}        // ADD
-                newPlayerTank={newPlayerTank}                      // ADD
-                setNewPlayerTank={setNewPlayerTank}                // ADD
-                newPlayerJester={newPlayerJester}                  // ADD
-                setNewPlayerJester={setNewPlayerJester}            // ADD
                 captainChoiceTimerSetting={captainChoiceTimerSetting}
                 setCaptainChoiceTimerSetting={setCaptainChoiceTimerSetting}
                 draftTimerSetting={draftTimerSetting}
@@ -1037,16 +907,6 @@ const handleRecordWinner = async (winningTeam) => {
                 onStartEvent={handleStartEvent}
                 setEditingPlayer={setEditingPlayer}
                 getRoleIcons={getRoleIcons}
-            />
-        );
-    }
-
-    if (view === 'captainReveal') {
-        return (
-            <window.CaptainRevealView
-                characterName={characterName}
-                captains={captains}
-                onContinue={handleContinueFromReveal}
             />
         );
     }
