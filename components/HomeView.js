@@ -141,8 +141,17 @@ window.HomeView = ({ characterName, error, setView }) => {
                                     >
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                                <div className={`w-3 h-3 rounded-full ${
+                                                    event.started ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'
+                                                }`}></div>
                                                 <span className="text-white font-bold">Event {event.id}</span>
+                                                <span className={`text-xs px-2 py-1 rounded ${
+                                                    event.started 
+                                                        ? 'bg-green-600/30 text-green-300 border border-green-500' 
+                                                        : 'bg-yellow-600/30 text-yellow-300 border border-yellow-500'
+                                                }`}>
+                                                    {event.started ? 'IN PROGRESS' : 'WAITING'}
+                                                </span>
                                             </div>
                                             <span className="text-xs text-gray-400">
                                                 {new Date(event.timestamp).toLocaleTimeString()}
