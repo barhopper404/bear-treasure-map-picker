@@ -48,6 +48,10 @@ function TreasureMapTeamPicker() {
     const [selectedMaps, setSelectedMaps] = useState([]);
     const [currentMapPicker, setCurrentMapPicker] = useState(0);
     const [mapPickingStarted, setMapPickingStarted] = useState(false);
+    const [mapPickTimer, setMapPickTimer] = useState(45);
+    const [mapPickTimerSetting, setMapPickTimerSetting] = useState(45);
+    const [isAutoPickingMap, setIsAutoPickingMap] = useState(false);
+    const [isPickingMap, setIsPickingMap] = useState(false);
 
     // Initialize on mount
     useEffect(() => {
@@ -369,6 +373,25 @@ function TreasureMapTeamPicker() {
         setView('teamPicking');
     };
 
+    // Map pick timer effect
+    useEffect(() => {
+        if (view === 'mapPicking' && parsedMaps.length > 0 && mapPickTimer > 0 && !isAutoPickingMap) {
+            const timer = setTimeout(() => {
+                setMapPickTimer(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        } else if (view === 'mapPicking' && mapPickTimer === 0 && parsedMaps.length > 0 && !isAutoPickingMap) {
+            handleMapPickTimeout();
+        }
+    }, [view, mapPickTimer, parsedMaps, isAutoPickingMap]);
+
+    // Reset map pick timer when picker changes
+    useEffect(() => {
+        if (view === 'mapPicking' && !isAutoPickingMap) {
+            setMapPickTimer(mapPickTimerSetting);
+        }
+    }, [currentMapPicker, view, selectedMaps.length, mapPickTimerSetting]);
+
     // Captain choice timeout
     const handleCaptainTimeout = async () => {
         if (pickingCaptain === eventData.firstPicker) {
@@ -405,6 +428,16 @@ function TreasureMapTeamPicker() {
             const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
             await handlePickPlayer(randomPlayer);
             setTimeout(() => setIsAutoPicking(false), 1000);
+        }
+    };
+
+    // Map pick timeout
+    const handleMapPickTimeout = async () => {
+        if (parsedMaps.length > 0 && !isAutoPickingMap) {
+            setIsAutoPickingMap(true);
+            const randomMap = parsedMaps[Math.floor(Math.random() * parsedMaps.length)];
+            await handlePickMap(randomMap);
+            setTimeout(() => setIsAutoPickingMap(false), 1000);
         }
     };
 
@@ -512,6 +545,10 @@ function TreasureMapTeamPicker() {
 
     // Pick map handler
     const handlePickMap = async (map) => {
+        if (isPickingMap) return; // Prevent spam clicking
+        
+        setIsPickingMap(true);
+        
         const teamKey = currentMapPicker === 0 ? 'captain1' : 'captain2';
         
         const newSelectedMaps = [...selectedMaps, { ...map, pickedBy: teamKey }];
@@ -519,6 +556,8 @@ function TreasureMapTeamPicker() {
         
         const newAvailableMaps = parsedMaps.filter(m => m.id !== map.id);
         setParsedMaps(newAvailableMaps);
+        
+        setMapPickTimer(mapPickTimerSetting); // Reset timer
         
         const updatedEventData = {
             ...eventData,
@@ -534,11 +573,82 @@ function TreasureMapTeamPicker() {
             console.error('Error updating maps:', err);
         }
         
+        setTimeout(() => {
+            setIsPickingMap(false);
+        }, 500);
+        
         // Check if all maps picked
         if (newAvailableMaps.length === 0) {
             setView('complete');
         } else {
             setCurrentMapPicker(prev => prev === 0 ? 1 : 0);
+        }
+    };
+
+    // Skip map picking (Marshall only)
+    const handleSkipMapPicking = async () => {
+        if (!confirm('Are you sure you want to skip map selection and go straight to the final screen?')) {
+            return;
+        }
+        
+        setView('complete');
+    };
+
+    // Record winner
+    const handleRecordWinner = async (winningTeam) => {
+        const winningTeamName = winningTeam === 'captain1' 
+            ? (eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`)
+            : (eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`);
+        
+        if (!confirm(`Confirm ${winningTeamName} won?`)) {
+            return;
+        }
+
+        try {
+            // Prepare stats data
+            const winningTeamPlayers = winningTeam === 'captain1' 
+                ? [captains[0], ...teams.captain1]
+                : [captains[1], ...teams.captain2];
+            
+            const losingTeamPlayers = winningTeam === 'captain1'
+                ? [captains[1], ...teams.captain2]
+                : [captains[0], ...teams.captain1];
+
+            const statsData = {
+                eventId: eventId,
+                winningTeam: winningTeam,
+                winners: winningTeamPlayers.map(p => ({
+                    name: p.name,
+                    discordId: p.discordUser?.id || 'N/A',
+                    discordUsername: p.discordUser?.username || 'N/A'
+                })),
+                losers: losingTeamPlayers.map(p => ({
+                    name: p.name,
+                    discordId: p.discordUser?.id || 'N/A',
+                    discordUsername: p.discordUser?.username || 'N/A'
+                })),
+                eventDate: new Date().toISOString(),
+                totalMaps: totalMaps,
+                mapsCompleted: selectedMaps.length
+            };
+
+            const updatedEventData = {
+                ...eventData,
+                winner: winningTeam,
+                statsRecorded: true,
+                statsData: statsData
+            };
+
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            if (result.success) {
+                setEventData(result.eventData);
+                alert('Winner recorded! Stats have been saved.');
+            } else {
+                alert('Failed to record winner: ' + result.error);
+            }
+        } catch (err) {
+            alert('Error recording winner: ' + err.message);
         }
     };
 
@@ -554,7 +664,7 @@ function TreasureMapTeamPicker() {
                         id: `map_${index}`,
                         x: x,
                         y: y,
-                        url: `https://exploreoutlands.com/?c=${x},${y}`
+                        url: `https://exploreoutlands.com/?c=${x},${y}#pos:${x},${y},9`
                     };
                 });
                 
@@ -562,6 +672,7 @@ function TreasureMapTeamPicker() {
                 setSelectedMaps([]);
                 setCurrentMapPicker(0); // Team 1 captain always picks first map
                 setMapPickingStarted(true);
+                setMapPickTimer(mapPickTimerSetting); // Initialize timer
                 
                 // Small delay to ensure state is set before view change
                 setTimeout(() => {
@@ -569,7 +680,7 @@ function TreasureMapTeamPicker() {
                 }, 100);
             }
         }
-    }, [view, mapCoords, mapPickingStarted]);
+    }, [view, mapCoords, mapPickingStarted, mapPickTimerSetting]);
 
     // Add manual player
     const handleAddManualPlayer = async () => {
@@ -808,6 +919,8 @@ function TreasureMapTeamPicker() {
                 setCaptainChoiceTimerSetting={setCaptainChoiceTimerSetting}
                 draftTimerSetting={draftTimerSetting}
                 setDraftTimerSetting={setDraftTimerSetting}
+                mapPickTimerSetting={mapPickTimerSetting}
+                setMapPickTimerSetting={setMapPickTimerSetting}
                 totalMaps={totalMaps}
                 setTotalMaps={setTotalMaps}
                 mapCoords={mapCoords}
@@ -872,7 +985,11 @@ function TreasureMapTeamPicker() {
                 parsedMaps={parsedMaps}
                 selectedMaps={selectedMaps}
                 eventData={eventData}
+                mapPickTimer={mapPickTimer}
+                mapPickTimerSetting={mapPickTimerSetting}
+                isAutoPickingMap={isAutoPickingMap}
                 onPickMap={handlePickMap}
+                onSkipMapPicking={handleSkipMapPicking}
                 getRoleIcons={getRoleIcons}
             />
         );
@@ -885,7 +1002,9 @@ function TreasureMapTeamPicker() {
                 captains={captains}
                 teams={teams}
                 eventData={eventData}
+                selectedMaps={selectedMaps}
                 setView={setView}
+                onRecordWinner={handleRecordWinner}
                 getRoleIcons={getRoleIcons}
             />
         );

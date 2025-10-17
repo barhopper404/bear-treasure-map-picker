@@ -5,11 +5,16 @@ window.MapPickingView = ({
     parsedMaps,
     selectedMaps,
     eventData,
+    mapPickTimer,
+    mapPickTimerSetting,
+    isAutoPickingMap,
     onPickMap,
+    onSkipMapPicking,
     getRoleIcons
 }) => {
     const { Shield } = window.Icons;
     const isCurrentCaptain = captains[currentMapPicker]?.name === characterName;
+    const isMarshall = eventData?.participants?.[0]?.name === characterName;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
@@ -22,17 +27,42 @@ window.MapPickingView = ({
                     </div>
                 )}
                 <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-3xl font-bold text-amber-400 mb-6 text-center">🗺️ Treasure Map Selection</h2>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-3xl font-bold text-amber-400">🗺️ Treasure Map Selection</h2>
+                        {isMarshall && (
+                            <button
+                                onClick={onSkipMapPicking}
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+                            >
+                                Skip Map Picking
+                            </button>
+                        )}
+                    </div>
                     
-                    {isCurrentCaptain ? (
+                    {parsedMaps.length > 0 && (
+                        <div className="text-center mb-4">
+                            <div className={`inline-block px-6 py-3 rounded-lg ${mapPickTimer <= 10 ? 'bg-red-600 animate-pulse' : 'bg-yellow-600'}`}>
+                                <span className="text-white text-2xl font-bold">{mapPickTimer}s</span>
+                                <span className={`ml-2 ${mapPickTimer <= 10 ? 'text-red-200' : 'text-yellow-200'}`}>to pick</span>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {isAutoPickingMap && (
+                        <div className="bg-red-600/80 p-4 rounded border-2 border-red-400 mb-6 text-center">
+                            <p className="text-white text-xl font-bold">⏰ Time's up! Auto-picking random map...</p>
+                        </div>
+                    )}
+                    
+                    {isCurrentCaptain && parsedMaps.length > 0 ? (
                         <div className="bg-green-900/60 p-4 rounded border-2 border-green-500 mb-6 text-center">
                             <p className="text-green-200 text-xl font-bold">It's your turn to pick a map!</p>
                         </div>
-                    ) : (
+                    ) : parsedMaps.length > 0 ? (
                         <div className="bg-gray-900/60 p-4 rounded border-2 border-gray-500 mb-6 text-center">
                             <p className="text-gray-300 text-xl">Waiting for {captains[currentMapPicker]?.name} to pick...</p>
                         </div>
-                    )}
+                    ) : null}
                     
                     <div className="grid grid-cols-3 gap-4 mb-6">
                         {/* Team 1 Maps */}
@@ -60,7 +90,7 @@ window.MapPickingView = ({
                             {parsedMaps.length === 0 ? (
                                 <div className="text-center text-gray-400">All picked!</div>
                             ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
                                     {parsedMaps.map((m) => (
                                         <button
                                             key={m.id}
