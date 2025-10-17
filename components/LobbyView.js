@@ -81,26 +81,41 @@ window.LobbyView = ({
                 )}
                 
                 {spinningWheel && (
-                    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-                        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-12 rounded-lg border-4 border-yellow-500 text-center shadow-2xl">
-                            <h2 className="text-5xl font-bold text-yellow-400 mb-12 animate-pulse">Spinning the Wheel!</h2>
-                            <div className="relative w-80 h-80 mx-auto mb-12">
-                                {/* Outer wheel rim with segments */}
-                                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-600 border-8 border-yellow-400 shadow-lg shadow-yellow-500/50"></div>
+                    <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50">
+                        <div className="text-center">
+                            <h2 className="text-6xl font-bold text-yellow-400 mb-16 animate-pulse">SELECTING CAPTAIN</h2>
 
-                                {/* Center display */}
-                                <div className="absolute inset-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-full flex items-center justify-center border-4 border-yellow-400">
-                                    <div className="text-center px-6">
-                                        <span className="text-white text-4xl font-bold block break-words">{currentWheelName}</span>
+                            {/* Slot Machine Style Display */}
+                            <div className="relative mx-auto" style={{width: '600px'}}>
+                                {/* Top decoration */}
+                                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+                                    <div className="w-0 h-0 border-l-16 border-r-16 border-b-16 border-l-transparent border-r-transparent border-b-yellow-500"></div>
+                                </div>
+
+                                {/* Main slot machine frame */}
+                                <div className="bg-gradient-to-b from-yellow-600 to-yellow-700 p-8 rounded-xl border-8 border-yellow-500 shadow-2xl">
+                                    {/* Display window */}
+                                    <div className="bg-black border-4 border-yellow-400 rounded-lg overflow-hidden shadow-inner" style={{height: '200px'}}>
+                                        <div className="flex items-center justify-center h-full px-8">
+                                            <span className="text-white text-6xl font-bold tracking-wider break-words text-center">
+                                                {currentWheelName}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom decoration bars */}
+                                    <div className="flex gap-4 mt-6 justify-center">
+                                        <div className="w-20 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                                        <div className="w-20 h-3 bg-red-600 rounded-full animate-pulse delay-75"></div>
+                                        <div className="w-20 h-3 bg-red-600 rounded-full animate-pulse delay-150"></div>
                                     </div>
                                 </div>
 
-                                {/* Pointer at top */}
-                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4">
-                                    <div className="w-0 h-0 border-l-8 border-r-8 border-t-16 border-l-transparent border-r-transparent border-t-red-500 shadow-lg"></div>
-                                </div>
+                                {/* Bottom glow effect */}
+                                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3/4 h-8 bg-yellow-500/30 blur-xl rounded-full"></div>
                             </div>
-                            <p className="text-yellow-300 text-2xl font-semibold">Selecting Captain...</p>
+
+                            <p className="text-yellow-300 text-3xl font-bold mt-16 tracking-wide">SPINNING...</p>
                         </div>
                     </div>
                 )}

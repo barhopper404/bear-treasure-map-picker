@@ -56,6 +56,7 @@ function TreasureMapTeamPicker() {
     const [newPlayerJester, setNewPlayerJester] = useState(false);
     const [adminList, setAdminList] = useState([]);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [wheelCandidates, setWheelCandidates] = useState([]);
 
 
     // Map picking state
@@ -160,11 +161,14 @@ function TreasureMapTeamPicker() {
                             setEventData(result.eventData);
 
                             // Sync wheel spinning state
-                            if (result.eventData.wheelSpinning !== undefined) {
-                                setSpinningWheel(result.eventData.wheelSpinning);
-                            }
-                            if (result.eventData.currentWheelName) {
-                                setCurrentWheelName(result.eventData.currentWheelName);
+                            if (result.eventData.wheelSpinning !== undefined && result.eventData.wheelSpinning !== spinningWheel) {
+                                if (result.eventData.wheelSpinning && result.eventData.wheelCandidates) {
+                                    // Start local animation when wheel starts spinning
+                                    setWheelCandidates(result.eventData.wheelCandidates);
+                                    startWheelAnimation(result.eventData.wheelCandidates, result.eventData.wheelWinner);
+                                } else {
+                                    setSpinningWheel(false);
+                                }
                             }
 
                             if (result.eventData.started && result.eventData.captains) {
@@ -339,44 +343,60 @@ function TreasureMapTeamPicker() {
         return players[Math.floor(Math.random() * players.length)];
     };
 
-    const animateWheelSpin = (names, callback) => {
+    // Start wheel animation for all clients (slot machine style)
+    const startWheelAnimation = (candidates, winner) => {
         setSpinningWheel(true);
 
-        // Pre-select the winner
-        const winner = spinWheel(names);
-
-        let count = 0;
         const totalDuration = 5000; // 5 seconds total spin time
         const startTime = Date.now();
+        let lastIndex = 0;
 
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = elapsed / totalDuration;
 
             if (progress < 1) {
-                // Calculate interval based on progress (starts fast, slows down)
-                // Using easeOut cubic function for smooth deceleration
-                const easeOut = 1 - Math.pow(1 - progress, 3);
+                // Calculate speed based on progress (starts fast, slows down dramatically)
+                // Using exponential easeOut for dramatic slowdown
+                const easeOut = 1 - Math.pow(1 - progress, 4);
 
-                // Determine which name to show based on eased progress
-                const totalCycles = 20; // Number of times to cycle through all names
-                const currentIndex = Math.floor(easeOut * totalCycles * names.length) % names.length;
-                setCurrentWheelName(names[currentIndex].name);
+                // Calculate how many "steps" we've taken
+                const totalSteps = 50 + (easeOut * 50); // 50-100 total steps
+                const currentStep = Math.floor(easeOut * totalSteps);
+
+                // Only update if we've moved to a new step (creates slot machine "tick" effect)
+                if (currentStep !== lastIndex) {
+                    lastIndex = currentStep;
+                    const currentIndex = currentStep % candidates.length;
+                    setCurrentWheelName(candidates[currentIndex].name);
+                }
 
                 requestAnimationFrame(animate);
             } else {
                 // Spin complete - show winner
                 setCurrentWheelName(winner.name);
 
-                // Pause on winner for 3 seconds before continuing
+                // Pause on winner for 3 seconds
                 setTimeout(() => {
                     setSpinningWheel(false);
-                    callback(winner);
                 }, 3000);
             }
         };
 
         requestAnimationFrame(animate);
+    };
+
+    const animateWheelSpin = (names, callback) => {
+        // Pre-select the winner
+        const winner = spinWheel(names);
+
+        // Run animation locally
+        startWheelAnimation(names, winner);
+
+        // After animation completes (5s spin + 3s pause = 8s), call callback
+        setTimeout(() => {
+            callback(winner);
+        }, 8000);
     };
 
     const handleContinueFromReveal = () => {
@@ -385,6 +405,11 @@ function TreasureMapTeamPicker() {
 
     // Start event and select captains
     const handleStartEvent = async () => {
+        if (eventData.participants.length < 4) {
+            alert('Need at least 4 participants to start the event!');
+            return;
+        }
+
         const potentialCaptains = eventData.participants.filter(p => p.wantsCaptain);
 
         if (potentialCaptains.length < 2) {
@@ -392,11 +417,18 @@ function TreasureMapTeamPicker() {
             return;
         }
 
-        // Set wheel spinning state in backend so everyone sees it
+        // Pre-select both captains
+        const captain1 = spinWheel(potentialCaptains);
+        const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
+        const captain2 = spinWheel(remainingCaptains);
+
+        // Set first wheel spinning state with candidates and winner
         const updatedEventDataSpinning = {
             ...eventData,
             wheelSpinning: true,
-            wheelSpinPhase: 'captain1'
+            wheelSpinPhase: 'captain1',
+            wheelCandidates: potentialCaptains,
+            wheelWinner: captain1
         };
 
         try {
@@ -406,14 +438,15 @@ function TreasureMapTeamPicker() {
             console.error('Error updating wheel state:', err);
         }
 
-        animateWheelSpin(potentialCaptains, async (captain1) => {
-            const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
-
+        // Start local animation for Marshall
+        animateWheelSpin(potentialCaptains, async () => {
             // Update to show second wheel spinning
             const updatedEventDataSpin2 = {
                 ...eventData,
                 wheelSpinning: true,
                 wheelSpinPhase: 'captain2',
+                wheelCandidates: remainingCaptains,
+                wheelWinner: captain2,
                 captain1Selected: captain1
             };
 
@@ -424,8 +457,8 @@ function TreasureMapTeamPicker() {
                 console.error('Error updating wheel state:', err);
             }
 
-            // Immediately start second wheel spin after first wheel finishes
-            animateWheelSpin(remainingCaptains, async (captain2) => {
+            // Start second wheel spin after first wheel finishes
+            animateWheelSpin(remainingCaptains, async () => {
                 const firstPicker = Math.random() < 0.5 ? 0 : 1;
 
                 const selectedCaptains = [captain1, captain2];
@@ -443,7 +476,9 @@ function TreasureMapTeamPicker() {
                     teams: { captain1: [], captain2: [] },
                     deferredFirstPick: false,
                     wheelSpinning: false,
-                    wheelSpinPhase: null
+                    wheelSpinPhase: null,
+                    wheelCandidates: null,
+                    wheelWinner: null
                 };
 
                 try {
@@ -453,7 +488,7 @@ function TreasureMapTeamPicker() {
                     setPickingCaptain(firstPicker);
                     setAvailablePlayers(nonCaptains);
                     setTeams({ captain1: [], captain2: [] });
-                    setView('captainReveal'); // CHANGED from 'captainChoice'
+                    setView('captainReveal');
                 } catch (err) {
                     setError('Error starting event: ' + err.message);
                 }
