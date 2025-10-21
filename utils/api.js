@@ -129,5 +129,15 @@ window.ApiUtils = {
 
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
+    },
+
+    resetEvent: async (eventId) => {
+        const params = new URLSearchParams({
+            action: 'resetEvent',
+            eventId: eventId
+        });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
     }
 };

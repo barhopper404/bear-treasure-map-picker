@@ -69,6 +69,17 @@ function TreasureMapTeamPicker() {
     const [isAutoPickingMap, setIsAutoPickingMap] = useState(false);
     const [isPickingMap, setIsPickingMap] = useState(false);
 
+    // Theme state
+    const [isDarkMode, setIsDarkMode] = useState(window.ThemeUtils.getStoredTheme());
+    const theme = window.ThemeUtils.getTheme(isDarkMode);
+
+    // Toggle theme
+    const toggleTheme = () => {
+        const newMode = !isDarkMode;
+        setIsDarkMode(newMode);
+        window.ThemeUtils.saveTheme(newMode);
+    };
+
     // Initialize on mount
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -416,92 +427,53 @@ function TreasureMapTeamPicker() {
             return;
         }
 
-        // Pre-select both captains
+        // Randomly select both captains instantly
         const captain1 = spinWheel(potentialCaptains);
         const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
         const captain2 = spinWheel(remainingCaptains);
 
-        // Set first wheel spinning state with candidates and winner
-        const updatedEventDataSpinning = {
+        const firstPicker = Math.random() < 0.5 ? 0 : 1;
+
+        const selectedCaptains = [captain1, captain2];
+        const nonCaptains = eventData.participants.filter(
+            p => p.name !== captain1.name && p.name !== captain2.name
+        );
+
+        const updatedEventData = {
             ...eventData,
-            wheelSpinning: true,
-            wheelSpinPhase: 'captain1',
-            wheelCandidates: potentialCaptains,
-            wheelWinner: captain1
+            started: true,
+            captains: selectedCaptains,
+            firstPicker: firstPicker,
+            currentPicker: firstPicker,
+            availablePlayers: nonCaptains,
+            teams: { captain1: [], captain2: [] },
+            deferredFirstPick: false,
+            wheelSpinning: false,
+            wheelSpinPhase: null,
+            wheelCandidates: null,
+            wheelWinner: null
         };
 
         try {
-            await window.ApiUtils.updateEvent(eventId, updatedEventDataSpinning);
-            setEventData(updatedEventDataSpinning);
+            await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            setCaptains(selectedCaptains);
+            setPickingCaptain(firstPicker);
+            setAvailablePlayers(nonCaptains);
+            setTeams({ captain1: [], captain2: [] });
+            setView('captainReveal');
         } catch (err) {
-            console.error('Error updating wheel state:', err);
+            setError('Error starting event: ' + err.message);
         }
-
-        // Start local animation for Marshall
-        animateWheelSpin(potentialCaptains, async () => {
-            // Update to show second wheel spinning
-            const updatedEventDataSpin2 = {
-                ...eventData,
-                wheelSpinning: true,
-                wheelSpinPhase: 'captain2',
-                wheelCandidates: remainingCaptains,
-                wheelWinner: captain2,
-                captain1Selected: captain1
-            };
-
-            try {
-                await window.ApiUtils.updateEvent(eventId, updatedEventDataSpin2);
-                setEventData(updatedEventDataSpin2);
-            } catch (err) {
-                console.error('Error updating wheel state:', err);
-            }
-
-            // Start second wheel spin after first wheel finishes
-            animateWheelSpin(remainingCaptains, async () => {
-                const firstPicker = Math.random() < 0.5 ? 0 : 1;
-
-                const selectedCaptains = [captain1, captain2];
-                const nonCaptains = eventData.participants.filter(
-                    p => p.name !== captain1.name && p.name !== captain2.name
-                );
-
-                const updatedEventData = {
-                    ...eventData,
-                    started: true,
-                    captains: selectedCaptains,
-                    firstPicker: firstPicker,
-                    currentPicker: firstPicker,
-                    availablePlayers: nonCaptains,
-                    teams: { captain1: [], captain2: [] },
-                    deferredFirstPick: false,
-                    wheelSpinning: false,
-                    wheelSpinPhase: null,
-                    wheelCandidates: null,
-                    wheelWinner: null
-                };
-
-                try {
-                    await window.ApiUtils.updateEvent(eventId, updatedEventData);
-
-                    setCaptains(selectedCaptains);
-                    setPickingCaptain(firstPicker);
-                    setAvailablePlayers(nonCaptains);
-                    setTeams({ captain1: [], captain2: [] });
-                    setView('captainReveal');
-                } catch (err) {
-                    setError('Error starting event: ' + err.message);
-                }
-            });
-        });
     };
 
     // Defer first pick
     const handleDeferFirstPick = async () => {
         setFirstPickerDeferred(true);
-        
+
         const newCurrentPicker = pickingCaptain === 0 ? 1 : 0;
         setPickingCaptain(newCurrentPicker);
-        
+
         const updatedEventData = {
             ...eventData,
             deferredFirstPick: true,
@@ -514,6 +486,35 @@ function TreasureMapTeamPicker() {
             setView('teamPicking');
         } catch (err) {
             setError('Error deferring pick: ' + err.message);
+        }
+    };
+
+    // Re-roll captains - bring all users back to lobby
+    const handleReroll = async () => {
+        try {
+            const result = await window.ApiUtils.resetEvent(eventId);
+
+            if (result.success) {
+                // Reset all local state back to lobby
+                setCaptains([]);
+                setPickingCaptain(0);
+                setFirstPickerDeferred(false);
+                setTeams({ captain1: [], captain2: [] });
+                setAvailablePlayers([]);
+                setCaptainChoiceTimer(captainChoiceTimerSetting);
+                setDraftTimer(draftTimerSetting);
+                setView('lobby');
+
+                // Refresh event data from server
+                const eventResult = await window.ApiUtils.getEvent(eventId);
+                if (eventResult.success && eventResult.eventData) {
+                    setEventData(eventResult.eventData);
+                }
+            } else {
+                setError('Error resetting event: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error resetting event: ' + err.message);
         }
     };
 
@@ -1187,6 +1188,9 @@ const handleRecordWinner = async (winningTeam) => {
                 error={error}
                 setView={setView}
                 setEventId={setEventId}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1349,6 +1353,8 @@ const handleRecordWinner = async (winningTeam) => {
                 captainChoiceTimer={captainChoiceTimer}
                 onStartDrafting={handleStartDrafting}
                 onDeferFirstPick={handleDeferFirstPick}
+                onReroll={handleReroll}
+                isMarshall={eventData?.marshall === characterName || isAdmin}
             />
         );
     }

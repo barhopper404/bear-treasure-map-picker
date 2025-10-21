@@ -4,7 +4,9 @@ window.CaptainChoiceView = ({
     pickingCaptain,
     captainChoiceTimer,
     onStartDrafting,
-    onDeferFirstPick
+    onDeferFirstPick,
+    onReroll,
+    isMarshall
 }) => {
     const Shield = (window.Icons && window.Icons.Shield) || (() => <div />);
     const isFirstCaptain = captains[pickingCaptain]?.name === characterName;
@@ -71,6 +73,18 @@ window.CaptainChoiceView = ({
                         </div>
                     )}
                 </div>
+
+                {isMarshall && (
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={onReroll}
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors border-2 border-red-400"
+                        >
+                            Re-roll Captains (Back to Lobby)
+                        </button>
+                        <p className="text-gray-400 text-sm mt-2">Marshall only: Reset captain selection</p>
+                    </div>
+                )}
             </div>
             <div className="text-center mt-4 text-yellow-500 text-sm">
                 {window.AppConfig.VERSION}
