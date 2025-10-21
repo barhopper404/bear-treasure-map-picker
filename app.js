@@ -1185,6 +1185,7 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.HomeView
                 characterName={characterName}
+                discordUser={discordUser}
                 error={error}
                 setView={setView}
                 setEventId={setEventId}
@@ -1347,6 +1348,7 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.CaptainRevealView
                 characterName={characterName}
+                discordUser={discordUser}
                 captains={captains}
                 onContinue={handleContinueFromReveal}
                 theme={theme}
@@ -1360,6 +1362,7 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.CaptainChoiceView
                 characterName={characterName}
+                discordUser={discordUser}
                 captains={captains}
                 pickingCaptain={pickingCaptain}
                 captainChoiceTimer={captainChoiceTimer}
@@ -1378,6 +1381,7 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.TeamPickingView
                 characterName={characterName}
+                discordUser={discordUser}
                 captains={captains}
                 pickingCaptain={pickingCaptain}
                 teams={teams}
@@ -1405,6 +1409,7 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.MapPickingView
                 characterName={characterName}
+                discordUser={discordUser}
                 captains={captains}
                 currentMapPicker={currentMapPicker}
                 parsedMaps={parsedMaps}
@@ -1427,6 +1432,7 @@ const handleRecordWinner = async (winningTeam) => {
         return (
             <window.CompleteView
                 characterName={characterName}
+                discordUser={discordUser}
                 captains={captains}
                 teams={teams}
                 eventData={eventData}

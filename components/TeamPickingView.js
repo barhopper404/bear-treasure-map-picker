@@ -1,5 +1,6 @@
 window.TeamPickingView = ({
     characterName,
+    discordUser,
     captains,
     pickingCaptain,
     teams,
@@ -29,13 +30,7 @@ window.TeamPickingView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
-                {characterName && (
-                    <div className="text-center mb-4">
-                        <span className={`${theme.badgeCharacter} px-4 py-2 rounded-full text-sm font-bold`}>
-                            Character: {characterName}
-                        </span>
-                    </div>
-                )}
+                <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
                 <div className={`${theme.cardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.borderPrimary}`}>
                     <h2 className={`text-3xl font-bold ${theme.headingPrimary} mb-6 text-center`}>Team Selection</h2>
 

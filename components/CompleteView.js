@@ -1,5 +1,6 @@
 window.CompleteView = ({
     characterName,
+    discordUser,
     captains,
     teams,
     eventData,
@@ -19,13 +20,7 @@ window.CompleteView = ({
         <div className={`min-h-screen ${theme.treasurePageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
-                {characterName && (
-                    <div className="text-center mb-4">
-                        <span className="bg-amber-600 text-white px-4 py-2 rounded-full text-sm">
-                            Character: {characterName}
-                        </span>
-                    </div>
-                )}
+                <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
                 <div className={`${theme.treasureCardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.treasureBorder}`}>
                     <h2 className={`text-4xl font-bold ${theme.treasureHeading} mb-8 text-center`}>Teams Ready!</h2>
                     

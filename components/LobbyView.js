@@ -779,6 +779,26 @@ window.LobbyView = ({
                                             Format: XXXX,YYYY|XXXX,YYYY|XXXX,YYYY (separated by |)
                                         </p>
                                     </div>
+                                    <div>
+                                        <button
+                                            onClick={() => {
+                                                // Generate random coordinates between 1-3000
+                                                const coords = [];
+                                                for (let i = 0; i < totalMaps; i++) {
+                                                    const x = Math.floor(Math.random() * 3000) + 1;
+                                                    const y = Math.floor(Math.random() * 3000) + 1;
+                                                    coords.push(`${x},${y}`);
+                                                }
+                                                setMapCoords(coords.join('|'));
+                                            }}
+                                            className={`w-full ${theme.btnPrimary} ${theme.btnPrimaryText} font-bold py-2 px-4 rounded transition-colors flex items-center justify-center gap-2`}
+                                        >
+                                            🎲 Generate Random Coordinates (Testing/Demo)
+                                        </button>
+                                        <p className="text-green-300 text-xs mt-1">
+                                            Generates {totalMaps} random map coordinates between 1-3000 for testing
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </>

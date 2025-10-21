@@ -69,6 +69,8 @@ function doGet(e) {
 
     // Get live events
     if (action === 'getLiveEvents') {
+      // Automatically cleanup stale events when fetching live events
+      cleanupStaleEvents(eventsSheet);
       const liveEvents = getLiveEvents(eventsSheet);
       return createResponse({ success: true, liveEvents: liveEvents });
     }
@@ -96,6 +98,11 @@ function doGet(e) {
     if (action === 'resetEvent') {
       const eventId = e.parameter.eventId;
       return resetEvent(eventId, eventsSheet);
+    }
+
+    // Clean up stale events (archive events older than 24h)
+    if (action === 'cleanupStaleEvents') {
+      return cleanupStaleEvents(eventsSheet);
     }
 
     // Record winner
@@ -517,5 +524,73 @@ function resetEvent(eventId, eventsSheet) {
   }
 
   return createResponse({ success: false, error: 'Event not found' });
+}
+
+function cleanupStaleEvents(eventsSheet) {
+  if (!eventsSheet) {
+    return createResponse({ success: false, error: 'Events sheet not found' });
+  }
+
+  // Get or create Archive sheet
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let archiveSheet = spreadsheet.getSheetByName('Archive');
+
+  if (!archiveSheet) {
+    archiveSheet = spreadsheet.insertSheet('Archive');
+    // Add header row
+    archiveSheet.appendRow(['Event ID', 'Event Data', 'Archived Date']);
+  }
+
+  const data = eventsSheet.getDataRange().getValues();
+  const currentTime = new Date().getTime();
+  const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
+
+  let archivedCount = 0;
+  let rowsToDelete = [];
+
+  // Start from bottom to avoid index shifting issues when deleting
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0]) {
+      try {
+        const eventData = JSON.parse(data[i][1]);
+        const eventTime = new Date(eventData.timestamp).getTime();
+        const age = currentTime - eventTime;
+
+        // Archive if event is older than 24 hours
+        if (age > twentyFourHoursInMs) {
+          // Add to archive sheet
+          archiveSheet.appendRow([
+            data[i][0],
+            data[i][1],
+            new Date().toISOString()
+          ]);
+
+          // Mark row for deletion
+          rowsToDelete.push(i + 1); // +1 because sheet rows are 1-indexed
+          archivedCount++;
+        }
+      } catch (e) {
+        // Invalid JSON - archive it anyway to clean up
+        archiveSheet.appendRow([
+          data[i][0],
+          data[i][1],
+          new Date().toISOString()
+        ]);
+        rowsToDelete.push(i + 1);
+        archivedCount++;
+      }
+    }
+  }
+
+  // Delete archived rows from Events sheet
+  for (let i = 0; i < rowsToDelete.length; i++) {
+    eventsSheet.deleteRow(rowsToDelete[i]);
+  }
+
+  return createResponse({
+    success: true,
+    message: `Archived ${archivedCount} stale event(s)`,
+    archivedCount: archivedCount
+  });
 }
 

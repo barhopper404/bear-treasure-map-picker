@@ -1,5 +1,6 @@
 window.CaptainRevealView = ({
     characterName,
+    discordUser,
     captains,
     onContinue,
     theme,
@@ -25,13 +26,7 @@ window.CaptainRevealView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-4xl mx-auto">
-                {characterName && (
-                    <div className="text-center mb-4">
-                        <span className={`${theme.btnPrimary} ${theme.btnPrimaryText} px-4 py-2 rounded-full text-sm font-bold`}>
-                            Character: {characterName}
-                        </span>
-                    </div>
-                )}
+                <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
 
                 <div className={`bg-gray-800/60 backdrop-blur-sm rounded-lg p-12 border-2 ${theme.borderPrimary}`}>
                     <div className="text-center mb-12">
