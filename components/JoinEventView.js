@@ -31,16 +31,18 @@ window.JoinEventView = ({
     setView,
     theme,
     isDarkMode,
-    onToggleTheme
+    onToggleTheme,
+    onBannerClick
 }) => {
     const { Shield, Key, Heart, Music, Discord, Sword, Target, Zap, Skull, User } = window.Icons;
-    
+
     // Allow joining without Discord, but show notice about limitations
 
     return (
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-2xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 <div className="text-center mb-4">
                     {discordUser ? (
                         <span className={`${theme.btnDiscord} px-4 py-2 rounded-full text-sm flex items-center gap-2 inline-flex`}>

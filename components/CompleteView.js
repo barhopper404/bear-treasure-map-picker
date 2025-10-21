@@ -10,7 +10,8 @@ window.CompleteView = ({
     getRoleIcons,
     theme,
     isDarkMode,
-    onToggleTheme
+    onToggleTheme,
+    onBannerClick
 }) => {
     const { Shield } = window.Icons;
     const isMarshall = eventData?.participants?.[0]?.name === characterName;
@@ -20,6 +21,7 @@ window.CompleteView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
                 <div className={`${theme.cardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.borderPrimary}`}>
                     <h2 className={`text-4xl font-bold ${theme.headingPrimary} mb-8 text-center`}>Teams Ready!</h2>

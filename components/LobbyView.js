@@ -61,7 +61,8 @@ window.LobbyView = ({
     getRoleIcons,
     theme,
     isDarkMode,
-    onToggleTheme
+    onToggleTheme,
+    onBannerClick
 }) => {
     const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User, RefreshCw, X, UserCheck, XCircle } = window.Icons;
 
@@ -153,6 +154,7 @@ window.LobbyView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-4xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 {characterName && (
                     <div className="text-center mb-4">
                         <span className={`${theme.badgeCharacter} px-4 py-2 rounded-full text-sm font-bold`}>
@@ -809,9 +811,10 @@ window.LobbyView = ({
                     {isMarshall && !eventData?.started && (
                         <button
                             onClick={onStartEvent}
-                            className={`w-full ${theme.btnSuccess} ${theme.btnSuccessText} font-bold py-4 px-6 rounded-lg transition-colors text-xl`}
+                            disabled={loading}
+                            className={`w-full ${loading ? theme.btnDisabled : `${theme.btnSuccess} ${theme.btnSuccessText}`} font-bold py-4 px-6 rounded-lg transition-colors text-xl ${loading ? 'cursor-not-allowed opacity-50' : ''}`}
                         >
-                            Start Event
+                            {loading ? 'Starting Event...' : 'Start Event'}
                         </button>
                     )}
                     {eventData?.started && (

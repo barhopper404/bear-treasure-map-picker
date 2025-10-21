@@ -1,4 +1,4 @@
-window.HomeView = ({ characterName, discordUser, error, setView, setEventId, theme, isDarkMode, onToggleTheme }) => {
+window.HomeView = ({ characterName, discordUser, error, setView, setEventId, theme, isDarkMode, onToggleTheme, onBannerClick }) => {
     const { Shield, Key, Heart, Music, Trophy, Users, Clock } = window.Icons;
     const [leaderboard, setLeaderboard] = React.useState([]);
     const [liveEvents, setLiveEvents] = React.useState([]);
@@ -35,6 +35,7 @@ window.HomeView = ({ characterName, discordUser, error, setView, setEventId, the
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
 
                 {/* Header */}

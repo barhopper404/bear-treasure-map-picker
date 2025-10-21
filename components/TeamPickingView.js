@@ -19,7 +19,8 @@ window.TeamPickingView = ({
     getRoleIcons,
     theme,
     isDarkMode,
-    onToggleTheme
+    onToggleTheme,
+    onBannerClick
 }) => {
     const { Shield, Edit } = window.Icons;
     const isCurrentCaptain = captains[pickingCaptain]?.name === characterName;
@@ -30,6 +31,7 @@ window.TeamPickingView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
                 <div className={`${theme.cardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.borderPrimary}`}>
                     <h2 className={`text-3xl font-bold ${theme.headingPrimary} mb-6 text-center`}>Team Selection</h2>

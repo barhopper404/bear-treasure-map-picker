@@ -29,7 +29,8 @@ window.CreateEventView = ({
     setView,
     theme,
     isDarkMode,
-    onToggleTheme
+    onToggleTheme,
+    onBannerClick
 }) => {
     const { Shield, Key, Heart, Music, Discord, Sword, Target, Zap, Skull, User } = window.Icons;
     
@@ -38,6 +39,7 @@ window.CreateEventView = ({
             <div className={`min-h-screen ${theme.pageBg} p-8`}>
                 <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
                 <div className="max-w-2xl mx-auto">
+                    <window.Banner onBannerClick={onBannerClick} />
                     <div className={`${theme.cardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.borderPrimary} text-center`}>
                         <h2 className={`text-3xl font-bold ${theme.headingPrimary} mb-6`}>Authentication Required</h2>
                         <p className={`${theme.textSecondary} mb-6`}>You must log in with Discord to create an event.</p>
@@ -67,6 +69,7 @@ window.CreateEventView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-2xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 <div className="text-center mb-4">
                     <span className={`${theme.btnDiscord} ${theme.btnDiscordText} px-4 py-2 rounded-full text-sm flex items-center gap-2 inline-flex`}>
                         <Discord className="w-4 h-4" />

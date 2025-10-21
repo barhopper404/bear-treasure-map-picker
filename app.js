@@ -427,6 +427,8 @@ function TreasureMapTeamPicker() {
             return;
         }
 
+        setLoading(true);
+
         // Randomly select both captains instantly
         const captain1 = spinWheel(potentialCaptains);
         const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
@@ -464,6 +466,7 @@ function TreasureMapTeamPicker() {
             setView('captainReveal');
         } catch (err) {
             setError('Error starting event: ' + err.message);
+            setLoading(false);
         }
     };
 
@@ -542,6 +545,17 @@ function TreasureMapTeamPicker() {
             setMapPickTimer(mapPickTimerSetting);
         }
     }, [currentMapPicker, view, selectedMaps.length, mapPickTimerSetting]);
+
+    // Auto-pick for manual captains after 5 seconds (map picking)
+    useEffect(() => {
+        if (view === 'mapPicking' && parsedMaps.length > 0 && !isAutoPickingMap && captains[currentMapPicker]?.isManual) {
+            const timer = setTimeout(() => {
+                const randomMap = parsedMaps[Math.floor(Math.random() * parsedMaps.length)];
+                handlePickMap(randomMap);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [view, currentMapPicker, parsedMaps, isAutoPickingMap, captains, selectedMaps.length]);
 
     // Captain choice timeout
     const handleCaptainTimeout = async () => {
@@ -622,6 +636,17 @@ function TreasureMapTeamPicker() {
             setDraftTimer(draftTimerSetting);
         }
     }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length, draftTimerSetting]);
+
+    // Auto-pick for manual captains after 5 seconds (team picking)
+    useEffect(() => {
+        if (view === 'teamPicking' && availablePlayers.length > 0 && !isAutoPicking && captains[pickingCaptain]?.isManual) {
+            const timer = setTimeout(() => {
+                const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+                handlePickPlayer(randomPlayer);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [view, pickingCaptain, availablePlayers, isAutoPicking, captains, teams.captain1.length, teams.captain2.length]);
 
     // Pick player handler
     const handlePickPlayer = async (player) => {
@@ -1044,6 +1069,36 @@ const handleRecordWinner = async (winningTeam) => {
         }
     };
 
+    // Handle banner click - go to home and leave event if not started
+    const handleBannerClick = async () => {
+        // If in an event and it hasn't started, leave the event
+        if (eventId && eventData && !eventData.started) {
+            try {
+                // Find the current user's participant index
+                const participantIndex = eventData.participants.findIndex(p =>
+                    p.discordUser && discordUser && p.discordUser.id === discordUser.id
+                );
+
+                // If user is in the event, remove them (unless they're Marshall)
+                if (participantIndex !== -1) {
+                    if (!eventData.participants[participantIndex].isMarshall) {
+                        const updatedEventData = { ...eventData };
+                        updatedEventData.participants.splice(participantIndex, 1);
+                        await window.ApiUtils.updateEvent(eventId, updatedEventData);
+                    }
+                }
+            } catch (err) {
+                console.error('Error leaving event:', err);
+            }
+        }
+
+        // Always go to home view
+        setView('home');
+        setEventId('');
+        setEventData(null);
+        setHasJoined(false);
+    };
+
     // Transfer Marshall (Marshall only)
     const handleTransferMarshall = async (newMarshallDiscordId) => {
         // Check if current user is Marshall
@@ -1192,6 +1247,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1230,6 +1286,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1270,6 +1327,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1340,6 +1398,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1354,6 +1413,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1373,6 +1433,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1401,6 +1462,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1424,6 +1486,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }
@@ -1443,6 +1506,7 @@ const handleRecordWinner = async (winningTeam) => {
                 theme={theme}
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
+                onBannerClick={handleBannerClick}
             />
         );
     }

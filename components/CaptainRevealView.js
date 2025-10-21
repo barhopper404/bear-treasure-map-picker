@@ -5,7 +5,8 @@ window.CaptainRevealView = ({
     onContinue,
     theme,
     isDarkMode,
-    onToggleTheme
+    onToggleTheme,
+    onBannerClick
 }) => {
     const { Shield, Crown } = window.Icons;
     const [countdown, setCountdown] = React.useState(5);
@@ -26,6 +27,7 @@ window.CaptainRevealView = ({
         <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-4xl mx-auto">
+                <window.Banner onBannerClick={onBannerClick} />
                 <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
 
                 <div className={`bg-gray-800/60 backdrop-blur-sm rounded-lg p-12 border-2 ${theme.borderPrimary}`}>
