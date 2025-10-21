@@ -1226,6 +1226,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onCreateEvent={handleCreateEvent}
                 onLoginWithDiscord={loginWithDiscord}
                 setView={setView}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1263,6 +1266,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onJoinEvent={handleJoinEvent}
                 onLoginWithDiscord={loginWithDiscord}
                 setView={setView}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1330,6 +1336,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onCancelEvent={handleCancelEvent}
                 setEditingPlayer={setEditingPlayer}
                 getRoleIcons={getRoleIcons}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1340,6 +1349,9 @@ const handleRecordWinner = async (winningTeam) => {
                 characterName={characterName}
                 captains={captains}
                 onContinue={handleContinueFromReveal}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1355,6 +1367,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onDeferFirstPick={handleDeferFirstPick}
                 onReroll={handleReroll}
                 isMarshall={eventData?.marshall === characterName || isAdmin}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1379,6 +1394,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onPickPlayer={handlePickPlayer}
                 onUpdateTeamName={handleUpdateTeamName}
                 getRoleIcons={getRoleIcons}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1398,6 +1416,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onPickMap={handlePickMap}
                 onSkipMapPicking={handleSkipMapPicking}
                 getRoleIcons={getRoleIcons}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }
@@ -1413,6 +1434,9 @@ const handleRecordWinner = async (winningTeam) => {
                 setView={setView}
                 onRecordWinner={handleRecordWinner}
                 getRoleIcons={getRoleIcons}
+                theme={theme}
+                isDarkMode={isDarkMode}
+                onToggleTheme={toggleTheme}
             />
         );
     }

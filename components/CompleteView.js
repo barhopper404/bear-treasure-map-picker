@@ -6,14 +6,18 @@ window.CompleteView = ({
     selectedMaps,
     setView,
     onRecordWinner,
-    getRoleIcons
+    getRoleIcons,
+    theme,
+    isDarkMode,
+    onToggleTheme
 }) => {
     const { Shield } = window.Icons;
     const isMarshall = eventData?.participants?.[0]?.name === characterName;
     const hasWinner = eventData?.winner;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 p-8">
+        <div className={`min-h-screen ${theme.treasurePageBg} p-8`}>
+            <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
                 {characterName && (
                     <div className="text-center mb-4">
@@ -22,18 +26,18 @@ window.CompleteView = ({
                         </span>
                     </div>
                 )}
-                <div className="bg-black/40 backdrop-blur-sm rounded-lg p-8 border-2 border-amber-600">
-                    <h2 className="text-4xl font-bold text-amber-400 mb-8 text-center">Teams Ready!</h2>
+                <div className={`${theme.treasureCardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.treasureBorder}`}>
+                    <h2 className={`text-4xl font-bold ${theme.treasureHeading} mb-8 text-center`}>Teams Ready!</h2>
                     
                     {/* Winner Badge */}
                     {hasWinner && (
                         <div className="mb-8 text-center">
                             <div className={`inline-block px-8 py-4 rounded-lg ${
-                                hasWinner === 'captain1' ? 'bg-blue-600' : 'bg-red-600'
-                            } border-4 border-yellow-400`}>
+                                hasWinner === 'captain1' ? theme.team1Bg : theme.team2Bg
+                            } border-4 ${theme.winnerBorder}`}>
                                 <p className="text-yellow-400 text-2xl font-bold">🏆 WINNER 🏆</p>
                                 <p className="text-white text-3xl font-bold mt-2">
-                                    {hasWinner === 'captain1' 
+                                    {hasWinner === 'captain1'
                                         ? (eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`)
                                         : (eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`)
                                     }
@@ -43,10 +47,10 @@ window.CompleteView = ({
                     )}
                     
                     <div className="grid grid-cols-2 gap-8 mb-8">
-                        <div className={`p-6 rounded border-2 ${
-                            hasWinner === 'captain1' ? 'bg-blue-900/80 border-yellow-400 border-4' : 'bg-blue-900/60 border-blue-500'
+                        <div className={`p-6 rounded ${
+                            hasWinner === 'captain1' ? `${theme.team1Bg} border-4 ${theme.winnerBorder}` : `${theme.team1Bg} border-2 ${theme.team1Border}`
                         }`}>
-                            <h3 className="text-2xl text-blue-300 mb-4 flex items-center gap-2">
+                            <h3 className={`text-2xl ${theme.team1Text} mb-4 flex items-center gap-2`}>
                                 <Shield className="w-6 h-6" />
                                 {eventData?.teamNames?.captain1 || `Team 1: ${captains[0]?.name}`}
                                 {hasWinner === 'captain1' && <span className="text-yellow-400 ml-auto">👑</span>}
@@ -56,7 +60,7 @@ window.CompleteView = ({
                                     {captains[0]?.name} (Captain)
                                 </div>
                                 {teams.captain1.map((p, idx) => (
-                                    <div key={idx} className="bg-black/60 p-3 rounded text-white flex justify-between items-center">
+                                    <div key={idx} className={`${theme.treasureOverlayBg} p-3 rounded text-white flex justify-between items-center`}>
                                         <span>{p.name}</span>
                                         <div className="flex gap-1">{getRoleIcons(p)}</div>
                                     </div>
@@ -67,7 +71,7 @@ window.CompleteView = ({
                                     <h4 className="text-blue-200 font-bold mb-2">Selected Maps:</h4>
                                     <div className="space-y-1">
                                         {selectedMaps.filter(m => m.pickedBy === 'captain1').map((m, idx) => (
-                                            <div key={idx} className="text-blue-300 text-sm">
+                                            <div key={idx} className={`${theme.team1Text} text-sm`}>
                                                 <a href={m.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
                                                     📍 {m.x}, {m.y}
                                                 </a>
@@ -77,11 +81,11 @@ window.CompleteView = ({
                                 </div>
                             )}
                         </div>
-                        
-                        <div className={`p-6 rounded border-2 ${
-                            hasWinner === 'captain2' ? 'bg-red-900/80 border-yellow-400 border-4' : 'bg-red-900/60 border-red-500'
+
+                        <div className={`p-6 rounded ${
+                            hasWinner === 'captain2' ? `${theme.team2Bg} border-4 ${theme.winnerBorder}` : `${theme.team2Bg} border-2 ${theme.team2Border}`
                         }`}>
-                            <h3 className="text-2xl text-red-300 mb-4 flex items-center gap-2">
+                            <h3 className={`text-2xl ${theme.team2Text} mb-4 flex items-center gap-2`}>
                                 <Shield className="w-6 h-6" />
                                 {eventData?.teamNames?.captain2 || `Team 2: ${captains[1]?.name}`}
                                 {hasWinner === 'captain2' && <span className="text-yellow-400 ml-auto">👑</span>}
@@ -91,7 +95,7 @@ window.CompleteView = ({
                                     {captains[1]?.name} (Captain)
                                 </div>
                                 {teams.captain2.map((p, idx) => (
-                                    <div key={idx} className="bg-black/60 p-3 rounded text-white flex justify-between items-center">
+                                    <div key={idx} className={`${theme.treasureOverlayBg} p-3 rounded text-white flex justify-between items-center`}>
                                         <span>{p.name}</span>
                                         <div className="flex gap-1">{getRoleIcons(p)}</div>
                                     </div>
@@ -102,7 +106,7 @@ window.CompleteView = ({
                                     <h4 className="text-red-200 font-bold mb-2">Selected Maps:</h4>
                                     <div className="space-y-1">
                                         {selectedMaps.filter(m => m.pickedBy === 'captain2').map((m, idx) => (
-                                            <div key={idx} className="text-red-300 text-sm">
+                                            <div key={idx} className={`${theme.team2Text} text-sm`}>
                                                 <a href={m.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
                                                     📍 {m.x}, {m.y}
                                                 </a>
@@ -113,12 +117,12 @@ window.CompleteView = ({
                             )}
                         </div>
                     </div>
-                    
+
                     <div className="text-center mb-8">
-                        <div className="text-6xl font-bold text-amber-400 mb-2">Ready to Hunt!</div>
-                        <div className="text-xl text-orange-300">Good luck with your treasure maps!</div>
+                        <div className={`text-6xl font-bold ${theme.treasureHeading} mb-2`}>Ready to Hunt!</div>
+                        <div className={`text-xl ${theme.treasureSubheading}`}>Good luck with your treasure maps!</div>
                         {eventData?.deferredFirstPick && (
-                            <div className="mt-4 bg-purple-900/60 p-4 rounded border-2 border-purple-500">
+                            <div className={`mt-4 ${theme.statusInfo} p-4 rounded`}>
                                 <p className="text-purple-200 text-lg">
                                     <strong>{captains[eventData.firstPicker]?.name}</strong> deferred and will pick the first treasure map!
                                 </p>
@@ -134,13 +138,13 @@ window.CompleteView = ({
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => onRecordWinner('captain1')}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl"
+                                    className={`${theme.team1Btn} text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl`}
                                 >
                                     {eventData?.teamNames?.captain1 || `Team 1`} Won
                                 </button>
                                 <button
                                     onClick={() => onRecordWinner('captain2')}
-                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl"
+                                    className={`${theme.team2Btn} text-white font-bold py-4 px-6 rounded-lg transition-colors text-xl`}
                                 >
                                     {eventData?.teamNames?.captain2 || `Team 2`} Won
                                 </button>
@@ -149,16 +153,16 @@ window.CompleteView = ({
                     )}
                     
                     <div className="flex justify-end">
-                        <button 
-                            onClick={() => setView('home')} 
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg transition-colors text-xl"
+                        <button
+                            onClick={() => setView('home')}
+                            className={`${theme.btnSuccess} ${theme.btnSuccessText} font-bold py-4 px-8 rounded-lg transition-colors text-xl`}
                         >
                             OK
                         </button>
                     </div>
                 </div>
             </div>
-            <div className="text-center mt-4 text-amber-600 text-sm">
+            <div className={`text-center mt-4 ${theme.treasureVersion} text-sm`}>
                 {window.AppConfig.VERSION}
             </div>
         </div>

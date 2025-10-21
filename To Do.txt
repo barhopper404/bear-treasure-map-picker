@@ -1,0 +1,30 @@
+Add re-roll option to captain choice view brings all users back to 
+lobby view
+
+Update all pages to share the same color pallete
+
+Add darmode (current) and lightmode toggle in top-right.
+
+Clean up stale events - send them to the "archive" tab in google sheets
+
+Spin Wheel?
+
+Add sound affects for when players or mapsare drafted
+
+Version at bottom of screen should update with each code change
+
+Add a button underneath "Treasure Map Settings" that gives random Map
+coordinates between 1-3000 for the amount of maps specified under 
+"total maps" - This button will be used for testing and demo purposes.
+
+Add a checkbox that enables "wantsCaptain" for all participants
+
+Show discord avatar picture next to character name on all pages (left side)
+If a manual user or user not logged in, use Bearhop.png
+
+Set the favicon and any other icon of the sort to favicon.png
+
+Can we add a banner to the top of every page - banner.png
+clicking this banner should bring you to the home screen and remove you
+from whatever event you were in unless it has already started.
+

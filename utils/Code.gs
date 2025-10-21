@@ -92,6 +92,12 @@ function doGet(e) {
       return deleteEvent(eventId, eventsSheet);
     }
 
+    // Reset Event (Re-roll captains)
+    if (action === 'resetEvent') {
+      const eventId = e.parameter.eventId;
+      return resetEvent(eventId, eventsSheet);
+    }
+
     // Record winner
     if (action === 'recordWinner') {
       return recordWinner(e, eventsSheet, statsSheet);
@@ -468,6 +474,45 @@ function deleteEvent(eventId, eventsSheet) {
       // Delete the row
       eventsSheet.deleteRow(i + 1);
       return createResponse({ success: true, message: 'Event deleted successfully' });
+    }
+  }
+
+  return createResponse({ success: false, error: 'Event not found' });
+}
+
+function resetEvent(eventId, eventsSheet) {
+  if (!eventsSheet) {
+    return createResponse({ success: false, error: 'Events sheet not found' });
+  }
+
+  const data = eventsSheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === eventId) {
+      try {
+        const eventData = JSON.parse(data[i][1]);
+
+        // Reset the event back to lobby state
+        eventData.started = false;
+        eventData.captains = [];
+        eventData.teams = { captain1: [], captain2: [] };
+        eventData.currentPicker = 0;
+        eventData.firstPicker = 0;
+        eventData.deferredFirstPick = false;
+        eventData.availablePlayers = [];
+        eventData.wheelSpinning = false;
+        eventData.wheelSpinPhase = null;
+        eventData.wheelCandidates = null;
+        eventData.wheelWinner = null;
+
+        // Keep all participants intact - they stay in the event
+        // Keep marshall, settings, and other configuration
+
+        eventsSheet.getRange(i + 1, 2).setValue(JSON.stringify(eventData));
+        return createResponse({ success: true, eventData: eventData, message: 'Event reset successfully' });
+      } catch (e) {
+        return createResponse({ success: false, error: 'Failed to parse event data: ' + e.toString() });
+      }
     }
   }
 
