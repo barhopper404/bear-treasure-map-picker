@@ -5,9 +5,9 @@ window.AppConfig = {
     SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec',
 
     // Version info - UPDATE THIS WITH EACH CHANGE
-    VERSION_NUMBER: 'v2.0.0',
-    VERSION_NAME: 'Theme System & Avatars',
-    BUILD_DATE: '2025-01-10', // Update this date when making changes
+    VERSION_NUMBER: 'v2.1.0',
+    VERSION_NAME: 'Banner & Auto-Pick for Manual Players',
+    BUILD_DATE: '2025-01-21', // Update this date when making changes
 
     // Computed version string
     get VERSION() {
