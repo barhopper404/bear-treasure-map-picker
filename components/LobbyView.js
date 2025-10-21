@@ -466,6 +466,7 @@ window.LobbyView = ({
                                     ) : (
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-3">
+                                                <window.Avatar discordUser={p.discordUser} size="lg" />
                                                 <div>
                                                     <span className={`${theme.textPrimary} font-bold`}>{p.name}</span>
                                                     {p.discordUser && !p.isManual && (

@@ -17,12 +17,12 @@ window.CompleteView = ({
     const hasWinner = eventData?.winner;
 
     return (
-        <div className={`min-h-screen ${theme.treasurePageBg} p-8`}>
+        <div className={`min-h-screen ${theme.pageBg} p-8`}>
             <window.ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
             <div className="max-w-6xl mx-auto">
                 <window.CharacterBadge characterName={characterName} discordUser={discordUser} theme={theme} />
-                <div className={`${theme.treasureCardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.treasureBorder}`}>
-                    <h2 className={`text-4xl font-bold ${theme.treasureHeading} mb-8 text-center`}>Teams Ready!</h2>
+                <div className={`${theme.cardBg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.borderPrimary}`}>
+                    <h2 className={`text-4xl font-bold ${theme.headingPrimary} mb-8 text-center`}>Teams Ready!</h2>
                     
                     {/* Winner Badge */}
                     {hasWinner && (
@@ -51,12 +51,16 @@ window.CompleteView = ({
                                 {hasWinner === 'captain1' && <span className="text-yellow-400 ml-auto">👑</span>}
                             </h3>
                             <div className="space-y-2 mb-4">
-                                <div className="bg-blue-800/60 p-3 rounded text-white font-bold">
+                                <div className="bg-blue-800/60 p-3 rounded text-white font-bold flex items-center gap-2">
+                                    <window.Avatar discordUser={captains[0]?.discordUser} size="sm" />
                                     {captains[0]?.name} (Captain)
                                 </div>
                                 {teams.captain1.map((p, idx) => (
-                                    <div key={idx} className={`${theme.treasureOverlayBg} p-3 rounded text-white flex justify-between items-center`}>
-                                        <span>{p.name}</span>
+                                    <div key={idx} className={`${theme.overlayBg} p-3 rounded ${theme.textPrimary} flex justify-between items-center`}>
+                                        <div className="flex items-center gap-2">
+                                            <window.Avatar discordUser={p.discordUser} size="sm" />
+                                            <span>{p.name}</span>
+                                        </div>
                                         <div className="flex gap-1">{getRoleIcons(p)}</div>
                                     </div>
                                 ))}
@@ -86,12 +90,16 @@ window.CompleteView = ({
                                 {hasWinner === 'captain2' && <span className="text-yellow-400 ml-auto">👑</span>}
                             </h3>
                             <div className="space-y-2 mb-4">
-                                <div className="bg-red-800/60 p-3 rounded text-white font-bold">
+                                <div className="bg-red-800/60 p-3 rounded text-white font-bold flex items-center gap-2">
+                                    <window.Avatar discordUser={captains[1]?.discordUser} size="sm" />
                                     {captains[1]?.name} (Captain)
                                 </div>
                                 {teams.captain2.map((p, idx) => (
-                                    <div key={idx} className={`${theme.treasureOverlayBg} p-3 rounded text-white flex justify-between items-center`}>
-                                        <span>{p.name}</span>
+                                    <div key={idx} className={`${theme.overlayBg} p-3 rounded ${theme.textPrimary} flex justify-between items-center`}>
+                                        <div className="flex items-center gap-2">
+                                            <window.Avatar discordUser={p.discordUser} size="sm" />
+                                            <span>{p.name}</span>
+                                        </div>
                                         <div className="flex gap-1">{getRoleIcons(p)}</div>
                                     </div>
                                 ))}
@@ -114,8 +122,8 @@ window.CompleteView = ({
                     </div>
 
                     <div className="text-center mb-8">
-                        <div className={`text-6xl font-bold ${theme.treasureHeading} mb-2`}>Ready to Hunt!</div>
-                        <div className={`text-xl ${theme.treasureSubheading}`}>Good luck with your treasure maps!</div>
+                        <div className={`text-6xl font-bold ${theme.headingPrimary} mb-2`}>Ready to Hunt!</div>
+                        <div className={`text-xl ${theme.headingSecondary}`}>Good luck with your treasure maps!</div>
                         {eventData?.deferredFirstPick && (
                             <div className={`mt-4 ${theme.statusInfo} p-4 rounded`}>
                                 <p className="text-purple-200 text-lg">
@@ -157,7 +165,7 @@ window.CompleteView = ({
                     </div>
                 </div>
             </div>
-            <div className={`text-center mt-4 ${theme.treasureVersion} text-sm`}>
+            <div className={`text-center mt-4 ${theme.versionText} text-sm`}>
                 {window.AppConfig.VERSION}
             </div>
         </div>

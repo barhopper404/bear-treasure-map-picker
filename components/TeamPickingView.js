@@ -108,7 +108,7 @@ window.TeamPickingView = ({
                             )}
                             <div className="space-y-2">
                                 <div className={`bg-blue-800/60 p-2 rounded ${theme.textPrimary} font-bold flex items-center gap-2`}>
-                                    <Shield className="w-4 h-4" />
+                                    <window.Avatar discordUser={captains[0]?.discordUser} size="sm" />
                                     {captains[0]?.name} (Captain)
                                 </div>
                                 {teams.captain1.map((p, idx) => (
@@ -118,7 +118,10 @@ window.TeamPickingView = ({
                                             justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
                                         }`}
                                     >
-                                        <span>{p.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <window.Avatar discordUser={p.discordUser} size="sm" />
+                                            <span>{p.name}</span>
+                                        </div>
                                         <div className="flex gap-1 flex-wrap">{getRoleIcons(p)}</div>
                                     </div>
                                 ))}
@@ -143,7 +146,10 @@ window.TeamPickingView = ({
                                                     : `${theme.btnDisabled} cursor-not-allowed opacity-50`
                                             }`}
                                         >
-                                            <span>{p.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <window.Avatar discordUser={p.discordUser} size="sm" />
+                                                <span>{p.name}</span>
+                                            </div>
                                             <div className="flex gap-1 flex-wrap">{getRoleIcons(p)}</div>
                                         </button>
                                     ))}
@@ -197,7 +203,7 @@ window.TeamPickingView = ({
                             )}
                             <div className="space-y-2">
                                 <div className={`bg-red-800/60 p-2 rounded ${theme.textPrimary} font-bold flex items-center gap-2`}>
-                                    <Shield className="w-4 h-4" />
+                                    <window.Avatar discordUser={captains[1]?.discordUser} size="sm" />
                                     {captains[1]?.name} (Captain)
                                 </div>
                                 {teams.captain2.map((p, idx) => (
@@ -207,7 +213,10 @@ window.TeamPickingView = ({
                                             justDrafted === p.name ? 'ring-4 ring-green-400 bg-green-900/60 scale-105' : ''
                                         }`}
                                     >
-                                        <span>{p.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <window.Avatar discordUser={p.discordUser} size="sm" />
+                                            <span>{p.name}</span>
+                                        </div>
                                         <div className="flex gap-1 flex-wrap">{getRoleIcons(p)}</div>
                                     </div>
                                 ))}

@@ -39,8 +39,8 @@ window.CaptainRevealView = ({
                         <div className={`${theme.team1Bg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.team1Border} transform hover:scale-105 transition-transform`}>
                             <div className="text-center">
                                 <div className="flex justify-center mb-4">
-                                    <div className={`w-24 h-24 ${theme.team1Avatar} rounded-full flex items-center justify-center border-4 border-blue-400`}>
-                                        <Shield className={`w-12 h-12 ${theme.textPrimary}`} />
+                                    <div className="border-4 border-blue-400 rounded-full">
+                                        <window.Avatar discordUser={captains[0]?.discordUser} size="xl" />
                                     </div>
                                 </div>
                                 <div className="bg-blue-600/30 px-4 py-2 rounded-full inline-block mb-3">
@@ -57,8 +57,8 @@ window.CaptainRevealView = ({
                         <div className={`${theme.team2Bg} backdrop-blur-sm rounded-lg p-8 border-2 ${theme.team2Border} transform hover:scale-105 transition-transform`}>
                             <div className="text-center">
                                 <div className="flex justify-center mb-4">
-                                    <div className={`w-24 h-24 ${theme.team2Avatar} rounded-full flex items-center justify-center border-4 border-red-400`}>
-                                        <Shield className={`w-12 h-12 ${theme.textPrimary}`} />
+                                    <div className="border-4 border-red-400 rounded-full">
+                                        <window.Avatar discordUser={captains[1]?.discordUser} size="xl" />
                                     </div>
                                 </div>
                                 <div className="bg-red-600/30 px-4 py-2 rounded-full inline-block mb-3">

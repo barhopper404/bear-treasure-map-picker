@@ -25,13 +25,17 @@ window.CaptainChoiceView = ({
 
                     <div className="grid grid-cols-2 gap-8 mb-8">
                         <div className={`${theme.team1Bg} p-6 rounded border-2 ${theme.team1Border} text-center`}>
-                            <Shield className={`w-16 h-16 mx-auto mb-4 ${theme.team1Text}`} />
+                            <div className="flex justify-center mb-4">
+                                <window.Avatar discordUser={captains[0]?.discordUser} size="xl" />
+                            </div>
                             <h3 className={`text-2xl ${theme.team1Text} font-bold`}>{captains[0]?.name}</h3>
                             <p className={`${theme.team1Text} mt-2`}>Team 1 Captain</p>
                         </div>
 
                         <div className={`${theme.team2Bg} p-6 rounded border-2 ${theme.team2Border} text-center`}>
-                            <Shield className={`w-16 h-16 mx-auto mb-4 ${theme.team2Text}`} />
+                            <div className="flex justify-center mb-4">
+                                <window.Avatar discordUser={captains[1]?.discordUser} size="xl" />
+                            </div>
                             <h3 className={`text-2xl ${theme.team2Text} font-bold`}>{captains[1]?.name}</h3>
                             <p className={`${theme.team2Text} mt-2`}>Team 2 Captain</p>
                         </div>

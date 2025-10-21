@@ -415,8 +415,8 @@ function TreasureMapTeamPicker() {
 
     // Start event and select captains
     const handleStartEvent = async () => {
-        if (eventData.participants.length < 4) {
-            alert('Need at least 4 participants to start the event!');
+        if (eventData.participants.length < 5) {
+            alert('Need at least 5 participants to start the event!');
             return;
         }
 
