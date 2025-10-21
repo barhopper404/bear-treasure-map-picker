@@ -618,6 +618,22 @@ function TreasureMapTeamPicker() {
         }
     }, [view, captainChoiceTimer]);
 
+    // Auto-choice for manual captains after 5 seconds (captain choice)
+    useEffect(() => {
+        if (view === 'captainChoice' && captains[0]?.isManual && captains[1]?.isManual) {
+            const timer = setTimeout(() => {
+                // Randomly choose to start drafting or defer
+                const randomChoice = Math.random() < 0.5;
+                if (randomChoice) {
+                    handleStartDrafting();
+                } else {
+                    handleDeferFirstPick();
+                }
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [view, captains]);
+
     // Draft timer effect
     useEffect(() => {
         if (view === 'teamPicking' && availablePlayers.length > 0 && draftTimer > 0 && !isAutoPicking) {
