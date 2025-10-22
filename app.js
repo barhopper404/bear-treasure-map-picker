@@ -77,6 +77,7 @@ function TreasureMapTeamPicker() {
     const [eventType, setEventType] = useState('treasureMap'); // 'treasureMap' or 'pitTrial'
     const [pitTrialTeamSize, setPitTrialTeamSize] = useState(5); // 3 or 5
     const [numTeams, setNumTeams] = useState(2); // Calculated based on participants
+    const [randomizeTeams, setRandomizeTeams] = useState(false); // Whether to randomize teams on start
 
     // Toggle theme
     const toggleTheme = () => {
@@ -422,6 +423,12 @@ function TreasureMapTeamPicker() {
 
     // Start event and select captains
     const handleStartEvent = async () => {
+        // If randomize teams is enabled, call the randomizer instead
+        if (randomizeTeams) {
+            await handleRandomizeTeams();
+            return;
+        }
+
         const currentEventType = eventData.eventType || 'treasureMap';
         const isPitTrial = currentEventType === 'pitTrial';
         const teamSize = isPitTrial ? (eventData.pitTrialSettings?.teamSize || 5) : null;
@@ -1649,7 +1656,8 @@ const handleRecordWinner = async (winningTeam) => {
                 pitTrialTeamSize={pitTrialTeamSize}
                 setPitTrialTeamSize={setPitTrialTeamSize}
                 onUpdateAllCaptainStatus={handleUpdateAllCaptainStatus}
-                onRandomizeTeams={handleRandomizeTeams}
+                randomizeTeams={randomizeTeams}
+                setRandomizeTeams={setRandomizeTeams}
             />
         );
     }

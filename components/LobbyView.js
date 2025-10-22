@@ -68,7 +68,8 @@ window.LobbyView = ({
     pitTrialTeamSize,
     setPitTrialTeamSize,
     onUpdateAllCaptainStatus,
-    onRandomizeTeams
+    randomizeTeams,
+    setRandomizeTeams
 }) => {
     const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User, RefreshCw, X, UserCheck, XCircle } = window.Icons;
 
@@ -631,17 +632,22 @@ window.LobbyView = ({
                                 </p>
                             </div>
 
-                            {/* Randomize Full Teams Button */}
-                            <div className="mb-4">
-                                <button
-                                    onClick={onRandomizeTeams}
-                                    className={`w-full ${theme.btnPrimary} ${theme.btnPrimaryText} font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2`}
-                                >
-                                    <RefreshCw className="w-5 h-5" />
-                                    Randomize Full Teams
-                                </button>
-                                <p className={`${theme.textMuted} text-sm mt-2 text-center`}>
-                                    Instantly create randomized teams with captains
+                            {/* Randomize Full Teams Checkbox */}
+                            <div className={`mb-4 ${theme.darkOverlayBg} p-4 rounded border ${theme.borderPrimary}`}>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={randomizeTeams || false}
+                                        onChange={(e) => setRandomizeTeams && setRandomizeTeams(e.target.checked)}
+                                        className="w-5 h-5"
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <RefreshCw className={`w-5 h-5 ${theme.headingPrimary}`} />
+                                        <span className={`${theme.textPrimary} font-bold`}>Randomize Full Teams</span>
+                                    </div>
+                                </label>
+                                <p className={`${theme.textMuted} text-sm mt-2 ml-8`}>
+                                    When enabled, teams will be randomly created when event starts
                                 </p>
                             </div>
 

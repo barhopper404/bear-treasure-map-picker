@@ -55,7 +55,8 @@ function doGet(e) {
                 marshall: eventData.marshall,
                 participantCount: eventData.participants ? eventData.participants.length : 0,
                 timestamp: eventData.timestamp,
-                started: eventData.started || false
+                started: eventData.started || false,
+                eventType: eventData.eventType || 'treasureMap'
               });
             }
           } catch (e) {

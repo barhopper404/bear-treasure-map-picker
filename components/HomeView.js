@@ -7,10 +7,10 @@ window.HomeView = ({ characterName, discordUser, error, setView, setEventId, the
 
     // Fetch both leaderboards and live events on mount and every 5 seconds
     React.useEffect(() => {
-        const fetchData = async () => {
+        const fetchData = async (isInitialLoad = false) => {
             try {
                 // Only show loading on initial fetch
-                if (treasureMapLeaderboard.length === 0 && pitTrialsLeaderboard.length === 0 && liveEvents.length === 0) {
+                if (isInitialLoad) {
                     setLoading(true);
                 }
 
@@ -34,15 +34,18 @@ window.HomeView = ({ characterName, discordUser, error, setView, setEventId, the
             } catch (err) {
                 console.error('Error fetching home data:', err);
             } finally {
-                setLoading(false);
+                // Only clear loading on initial fetch
+                if (isInitialLoad) {
+                    setLoading(false);
+                }
             }
         };
 
-        // Initial fetch
-        fetchData();
+        // Initial fetch with loading indicator
+        fetchData(true);
 
-        // Set up interval to refresh every 5 seconds
-        const interval = setInterval(fetchData, 5000);
+        // Set up interval to refresh every 5 seconds (background refresh without loading indicator)
+        const interval = setInterval(() => fetchData(false), 5000);
 
         // Cleanup interval on unmount
         return () => clearInterval(interval);
