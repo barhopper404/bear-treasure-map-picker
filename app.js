@@ -207,7 +207,9 @@ function TreasureMapTeamPicker() {
                                 }
                                 if (view === 'captainChoice' && result.eventData.deferredFirstPick !== undefined) {
                                     setFirstPickerDeferred(result.eventData.deferredFirstPick);
-                                    if (result.eventData.deferredFirstPick || (result.eventData.teams && (result.eventData.teams.captain1.length > 0 || result.eventData.teams.captain2.length > 0))) {
+                                    // Check if any team has players (works for both captain1/captain2 and team1/team2/team3...)
+                                    const hasTeamMembers = result.eventData.teams && Object.values(result.eventData.teams).some(team => team.length > 0);
+                                    if (result.eventData.deferredFirstPick || hasTeamMembers) {
                                         setView('teamPicking');
                                     }
                                 }
@@ -423,6 +425,8 @@ function TreasureMapTeamPicker() {
 
     // Start event and select captains
     const handleStartEvent = async () => {
+        setError(''); // Clear any previous errors
+
         // If randomize teams is enabled, call the randomizer instead
         if (randomizeTeams) {
             await handleRandomizeTeams();
@@ -436,7 +440,10 @@ function TreasureMapTeamPicker() {
         // Validate minimum players
         const minPlayers = isPitTrial ? (teamSize * 2) : 5;
         if (eventData.participants.length < minPlayers) {
-            alert(`Need at least ${minPlayers} participants to start ${isPitTrial ? 'pit trials' : 'the event'}!`);
+            const errorMessage = isPitTrial
+                ? `Need at least ${minPlayers} players to start Pit Trials with ${teamSize}-player teams! (Currently have ${eventData.participants.length})`
+                : `Need at least ${minPlayers} participants to start the event! (Currently have ${eventData.participants.length})`;
+            setError(errorMessage);
             return;
         }
 
@@ -446,7 +453,8 @@ function TreasureMapTeamPicker() {
         const potentialCaptains = eventData.participants.filter(p => p.wantsCaptain);
 
         if (potentialCaptains.length < calculatedNumTeams) {
-            alert(`Need at least ${calculatedNumTeams} people willing to be captain!`);
+            const errorMessage = `Need at least ${calculatedNumTeams} people willing to be captain! (Currently have ${potentialCaptains.length})`;
+            setError(errorMessage);
             return;
         }
 
@@ -705,7 +713,7 @@ function TreasureMapTeamPicker() {
         if (view === 'teamPicking' && !isAutoPicking) {
             setDraftTimer(draftTimerSetting);
         }
-    }, [pickingCaptain, view, teams.captain1.length, teams.captain2.length, draftTimerSetting]);
+    }, [pickingCaptain, view, teams, draftTimerSetting]);
 
     // Auto-pick for manual captains after 5 seconds (team picking)
     useEffect(() => {
@@ -716,7 +724,7 @@ function TreasureMapTeamPicker() {
             }, 5000);
             return () => clearTimeout(timer);
         }
-    }, [view, pickingCaptain, availablePlayers, isAutoPicking, captains, teams.captain1.length, teams.captain2.length]);
+    }, [view, pickingCaptain, availablePlayers, isAutoPicking, captains, teams]);
 
     // Sound effect utility
     const playDraftSound = () => {
@@ -1181,7 +1189,10 @@ const handleRecordWinner = async (winningTeam) => {
             // Validate minimum players
             const minPlayers = isPitTrial ? (teamSize * 2) : 5;
             if (eventData.participants.length < minPlayers) {
-                setError(`Need at least ${minPlayers} players for ${isPitTrial ? 'Pit Trials' : 'Treasure Maps'}`);
+                const errorMessage = isPitTrial
+                    ? `Need at least ${minPlayers} players to start Pit Trials with ${teamSize}-player teams! (Currently have ${eventData.participants.length})`
+                    : `Need at least ${minPlayers} participants to start Treasure Maps! (Currently have ${eventData.participants.length})`;
+                setError(errorMessage);
                 setLoading(false);
                 return;
             }
