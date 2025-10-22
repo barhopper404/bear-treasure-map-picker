@@ -1,22 +1,17 @@
 // API functions for interacting with Google Sheets backend
 window.ApiUtils = {
     createEvent: async (eventId, characterName, discordUser, participant, eventType = 'treasureMap', pitTrialTeamSize = 5) => {
-        // Use POST to avoid URL length limits with large payloads
-        const response = await fetch(window.AppConfig.SCRIPT_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'createEvent',
-                eventId: eventId,
-                marshall: characterName,
-                discordUser: discordUser,
-                participantData: [participant],
-                eventType: eventType,
-                pitTrialTeamSize: pitTrialTeamSize
-            })
+        const params = new URLSearchParams({
+            action: 'createEvent',
+            eventId: eventId,
+            marshall: characterName,
+            discordUser: JSON.stringify(discordUser),
+            participantData: JSON.stringify([participant]),
+            eventType: eventType,
+            pitTrialTeamSize: pitTrialTeamSize.toString()
         });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
 
@@ -26,34 +21,34 @@ window.ApiUtils = {
     },
 
     addParticipant: async (eventId, participant) => {
-        // Use POST to avoid URL length limits with large payloads
-        const response = await fetch(window.AppConfig.SCRIPT_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'addParticipant',
-                eventId: eventId,
-                participantData: participant
-            })
+        const params = new URLSearchParams({
+            action: 'addParticipant',
+            eventId: eventId,
+            participantData: JSON.stringify(participant)
         });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
 
     updateEvent: async (eventId, eventData) => {
-        // Use POST to avoid URL length limits with large payloads
-        const response = await fetch(window.AppConfig.SCRIPT_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'updateEvent',
-                eventId: eventId,
-                eventData: eventData
-            })
+        // Compress data by removing whitespace from JSON
+        const compressedData = JSON.stringify(eventData);
+
+        const params = new URLSearchParams({
+            action: 'updateEvent',
+            eventId: eventId,
+            eventData: compressedData
         });
+
+        const url = `${window.AppConfig.SCRIPT_URL}?${params.toString()}`;
+
+        // Check if URL is too long (Apps Script limit is ~2000 chars for GET)
+        if (url.length > 2000) {
+            console.warn(`URL length is ${url.length}, may exceed limit`);
+        }
+
+        const response = await fetch(url);
         return await response.json();
     },
 
