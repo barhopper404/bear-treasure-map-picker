@@ -82,9 +82,9 @@ window.TeamPickingView = ({
                     {/* Dynamic grid: 2 teams = 3 cols, 3+ teams = flexible grid with available players at bottom */}
                     {numberOfTeams === 2 ? (
                         <div className="grid grid-cols-3 gap-4 mb-6">
-                            {/* Team 1 */}
-                            {[0, 1].map((teamIndex) => {
-                                if (teamIndex === 1) {
+                            {/* Team 1, Available Players, Team 2 */}
+                            {[0, 1, 2].map((columnIndex) => {
+                                if (columnIndex === 1) {
                                     // Middle column: Available Players
                                     return (
                                         <div key="available" className={`${theme.overlayBg} p-4 rounded border-2 ${theme.borderPrimary}`}>
@@ -117,9 +117,9 @@ window.TeamPickingView = ({
                                     );
                                 }
 
-                                // Team columns
-                                const actualTeamIndex = teamIndex === 0 ? 0 : 1;
-                                const teamKey = `captain${actualTeamIndex + 1}`;
+                                // Team columns (column 0 = team 0, column 2 = team 1)
+                                const actualTeamIndex = columnIndex === 0 ? 0 : 1;
+                                const teamKey = isPitTrial ? `team${actualTeamIndex + 1}` : `captain${actualTeamIndex + 1}`;
                                 const colors = teamColors[actualTeamIndex];
                                 const captain = captains[actualTeamIndex];
                                 const teamMembers = teams[teamKey] || [];
