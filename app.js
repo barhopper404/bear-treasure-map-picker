@@ -1088,30 +1088,83 @@ const handleRecordWinner = async (winningTeam) => {
         }
     };
 
-    // Update all captain status
+    // Update all captain status (optimistic update - no loading delay)
     const handleUpdateAllCaptainStatus = async (updatedParticipants) => {
-        setLoading(true);
         setError('');
 
-        try {
-            const updatedEventData = {
-                ...eventData,
-                participants: updatedParticipants
-            };
+        // Optimistic update - update UI immediately
+        const updatedEventData = {
+            ...eventData,
+            participants: updatedParticipants
+        };
+        setEventData(updatedEventData);
 
+        try {
+            // Update backend in background
             const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
 
-            if (result.success) {
-                setEventData(result.eventData);
-                setTempRoles({});
-            } else {
-                setError('Failed to update player: ' + result.error);
+            if (!result.success) {
+                setError('Failed to update captain status: ' + result.error);
+                // Revert on error (optional - you could refetch instead)
             }
         } catch (err) {
             setError('Error updating captain status: ' + err.message);
             console.error('Update captain status error:', err);
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    // Update event type (pit trial vs treasure map)
+    const handleUpdateEventType = async (newEventType) => {
+        setError('');
+
+        // Optimistic update
+        setEventType(newEventType);
+
+        const updatedEventData = {
+            ...eventData,
+            eventType: newEventType,
+            pitTrialSettings: newEventType === 'pitTrial' ? {
+                teamSize: pitTrialTeamSize,
+                numTeams: 0
+            } : null
+        };
+        setEventData(updatedEventData);
+
+        try {
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+            if (!result.success) {
+                setError('Failed to update event type: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error updating event type: ' + err.message);
+            console.error('Update event type error:', err);
+        }
+    };
+
+    // Update pit trial team size
+    const handleUpdatePitTrialTeamSize = async (newTeamSize) => {
+        setError('');
+
+        // Optimistic update
+        setPitTrialTeamSize(newTeamSize);
+
+        const updatedEventData = {
+            ...eventData,
+            pitTrialSettings: {
+                teamSize: newTeamSize,
+                numTeams: 0
+            }
+        };
+        setEventData(updatedEventData);
+
+        try {
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+            if (!result.success) {
+                setError('Failed to update team size: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error updating team size: ' + err.message);
+            console.error('Update team size error:', err);
         }
     };
 
@@ -1652,9 +1705,9 @@ const handleRecordWinner = async (winningTeam) => {
                 onToggleTheme={toggleTheme}
                 onBannerClick={handleBannerClick}
                 eventType={eventType}
-                setEventType={setEventType}
+                onUpdateEventType={handleUpdateEventType}
                 pitTrialTeamSize={pitTrialTeamSize}
-                setPitTrialTeamSize={setPitTrialTeamSize}
+                onUpdatePitTrialTeamSize={handleUpdatePitTrialTeamSize}
                 onUpdateAllCaptainStatus={handleUpdateAllCaptainStatus}
                 randomizeTeams={randomizeTeams}
                 setRandomizeTeams={setRandomizeTeams}

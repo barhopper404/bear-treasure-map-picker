@@ -64,9 +64,9 @@ window.LobbyView = ({
     onToggleTheme,
     onBannerClick,
     eventType,
-    setEventType,
+    onUpdateEventType,
     pitTrialTeamSize,
-    setPitTrialTeamSize,
+    onUpdatePitTrialTeamSize,
     onUpdateAllCaptainStatus,
     randomizeTeams,
     setRandomizeTeams
@@ -298,7 +298,7 @@ window.LobbyView = ({
                             <div className="flex flex-col gap-2">
                                 <div className={`flex rounded-lg overflow-hidden border-2 ${theme.borderPrimary}`}>
                                     <button
-                                        onClick={() => isMarshall && setEventType('treasureMap')}
+                                        onClick={() => isMarshall && onUpdateEventType && onUpdateEventType('treasureMap')}
                                         disabled={!isMarshall || eventData?.started}
                                         className={`px-4 py-2 font-bold text-sm transition-colors ${
                                             eventType === 'treasureMap'
@@ -310,7 +310,7 @@ window.LobbyView = ({
                                         🗺️ Treasure Maps
                                     </button>
                                     <button
-                                        onClick={() => isMarshall && setEventType('pitTrial')}
+                                        onClick={() => isMarshall && onUpdateEventType && onUpdateEventType('pitTrial')}
                                         disabled={!isMarshall || eventData?.started}
                                         className={`px-4 py-2 font-bold text-sm transition-colors ${
                                             eventType === 'pitTrial'
@@ -327,7 +327,7 @@ window.LobbyView = ({
                                 {eventType === 'pitTrial' && (
                                     <div className={`flex rounded-lg overflow-hidden border-2 border-purple-500`}>
                                         <button
-                                            onClick={() => isMarshall && setPitTrialTeamSize(3)}
+                                            onClick={() => isMarshall && onUpdatePitTrialTeamSize && onUpdatePitTrialTeamSize(3)}
                                             disabled={!isMarshall || eventData?.started}
                                             className={`px-4 py-2 font-bold text-sm transition-colors ${
                                                 pitTrialTeamSize === 3
@@ -339,7 +339,7 @@ window.LobbyView = ({
                                             3 Players
                                         </button>
                                         <button
-                                            onClick={() => isMarshall && setPitTrialTeamSize(5)}
+                                            onClick={() => isMarshall && onUpdatePitTrialTeamSize && onUpdatePitTrialTeamSize(5)}
                                             disabled={!isMarshall || eventData?.started}
                                             className={`px-4 py-2 font-bold text-sm transition-colors ${
                                                 pitTrialTeamSize === 5
