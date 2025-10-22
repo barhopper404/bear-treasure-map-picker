@@ -5,8 +5,8 @@ window.AppConfig = {
     SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwSZmzTPP43TD36KdccG4rw6P6NJtN2KbWBK8VW_OOHUzC3vE5NkrKN990EKThKAYU1/exec',
 
     // Version info - UPDATE THIS WITH EACH CHANGE
-    VERSION_NUMBER: 'v2.6.0',
-    VERSION_NAME: 'Data Compression',
+    VERSION_NUMBER: 'v2.6.1',
+    VERSION_NAME: 'Partial Updates Only',
     BUILD_DATE: '2025-01-21', // Update this date when making changes
 
     // Computed version string

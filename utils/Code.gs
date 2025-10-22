@@ -466,62 +466,21 @@ function addParticipant(e, eventsSheet) {
   return createResponse({ success: false, error: 'Event not found' });
 }
 
-// Helper to restore missing fields with defaults
-function expandParticipant(p) {
-  return {
-    name: p.name,
-    discordUser: p.discordUser,
-    wantsCaptain: p.wantsCaptain || false,
-    lockpicker: p.lockpicker || false,
-    healer: p.healer || false,
-    bard: p.bard || false,
-    meleeDPS: p.meleeDPS || false,
-    rangedDPS: p.rangedDPS || false,
-    tamer: p.tamer || false,
-    summoner: p.summoner || false,
-    tank: p.tank || false,
-    jester: p.jester || false,
-    isMarshall: p.isMarshall || false,
-    isAdmin: p.isAdmin || false,
-    isManual: p.isManual || false,
-    isAnonymous: p.isAnonymous || false
-  };
-}
-
 function updateEvent(e, eventsSheet) {
   const eventId = e.parameter.eventId;
-  const compressedData = JSON.parse(e.parameter.eventData);
-
-  // Expand compressed data to full format
-  const updatedEventData = {
-    id: compressedData.id,
-    marshall: compressedData.marshall,
-    marshallDiscord: compressedData.marshallDiscord,
-    participants: compressedData.participants.map(expandParticipant),
-    started: compressedData.started || false,
-    eventType: compressedData.eventType || 'treasureMap',
-    timestamp: compressedData.timestamp,
-    pitTrialSettings: compressedData.pitTrialSettings || null,
-    captains: compressedData.captains ? compressedData.captains.map(expandParticipant) : [],
-    teams: compressedData.teams || {},
-    availablePlayers: compressedData.availablePlayers ? compressedData.availablePlayers.map(expandParticipant) : [],
-    pickingCaptain: compressedData.pickingCaptain !== undefined ? compressedData.pickingCaptain : 0,
-    firstPicker: compressedData.firstPicker !== undefined ? compressedData.firstPicker : 0,
-    currentPicker: compressedData.currentPicker !== undefined ? compressedData.currentPicker : 0,
-    deferredFirstPick: compressedData.deferredFirstPick || false,
-    completed: compressedData.completed || false,
-    winner: compressedData.winner || null,
-    wheelSpinning: compressedData.wheelSpinning || false,
-    wheelSpinPhase: compressedData.wheelSpinPhase || null,
-    wheelCandidates: compressedData.wheelCandidates || null,
-    wheelWinner: compressedData.wheelWinner || null
-  };
+  const updateData = JSON.parse(e.parameter.eventData);
 
   const dataRange = eventsSheet.getDataRange();
   const values = dataRange.getValues();
 
   for (let i = 0; i < values.length; i++) {
     if (values[i][0] === eventId) {
+      // Get existing event data
+      const existingEvent = JSON.parse(values[i][1]);
+
+      // Merge update with existing data (preserves participants list)
+      const updatedEventData = Object.assign({}, existingEvent, updateData);
+
       eventsSheet.getRange(i + 1, 2).setValue(JSON.stringify(updatedEventData));
       return createResponse({ success: true, eventData: updatedEventData });
     }
