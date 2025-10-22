@@ -1,5 +1,56 @@
 // API functions for interacting with Google Sheets backend
 window.ApiUtils = {
+    // Helper to strip unnecessary fields and compress data
+    compressParticipant: (p) => {
+        const compressed = {
+            name: p.name,
+            discordUser: p.discordUser,
+            wantsCaptain: p.wantsCaptain
+        };
+
+        // Only include flags that are true
+        if (p.lockpicker) compressed.lockpicker = true;
+        if (p.healer) compressed.healer = true;
+        if (p.bard) compressed.bard = true;
+        if (p.meleeDPS) compressed.meleeDPS = true;
+        if (p.rangedDPS) compressed.rangedDPS = true;
+        if (p.tamer) compressed.tamer = true;
+        if (p.summoner) compressed.summoner = true;
+        if (p.tank) compressed.tank = true;
+        if (p.jester) compressed.jester = true;
+        if (p.isMarshall) compressed.isMarshall = true;
+        if (p.isAdmin) compressed.isAdmin = true;
+        if (p.isManual) compressed.isManual = true;
+        if (p.isAnonymous) compressed.isAnonymous = true;
+
+        return compressed;
+    },
+
+    compressEventData: (eventData) => {
+        const compressed = {
+            id: eventData.id,
+            marshall: eventData.marshall,
+            marshallDiscord: eventData.marshallDiscord,
+            participants: eventData.participants.map(window.ApiUtils.compressParticipant),
+            started: eventData.started,
+            eventType: eventData.eventType,
+            timestamp: eventData.timestamp
+        };
+
+        // Only include non-empty/non-default values
+        if (eventData.pitTrialSettings) compressed.pitTrialSettings = eventData.pitTrialSettings;
+        if (eventData.captains) compressed.captains = eventData.captains.map(window.ApiUtils.compressParticipant);
+        if (eventData.teams) compressed.teams = eventData.teams;
+        if (eventData.availablePlayers) compressed.availablePlayers = eventData.availablePlayers.map(window.ApiUtils.compressParticipant);
+        if (eventData.pickingCaptain !== undefined) compressed.pickingCaptain = eventData.pickingCaptain;
+        if (eventData.firstPicker !== undefined) compressed.firstPicker = eventData.firstPicker;
+        if (eventData.currentPicker !== undefined) compressed.currentPicker = eventData.currentPicker;
+        if (eventData.completed) compressed.completed = eventData.completed;
+        if (eventData.winner) compressed.winner = eventData.winner;
+
+        return compressed;
+    },
+
     createEvent: async (eventId, characterName, discordUser, participant, eventType = 'treasureMap', pitTrialTeamSize = 5) => {
         const params = new URLSearchParams({
             action: 'createEvent',
@@ -32,20 +83,23 @@ window.ApiUtils = {
     },
 
     updateEvent: async (eventId, eventData) => {
-        // Compress data by removing whitespace from JSON
-        const compressedData = JSON.stringify(eventData);
+        // Compress data by removing false/null fields
+        const compressed = window.ApiUtils.compressEventData(eventData);
+        const compressedJSON = JSON.stringify(compressed);
 
         const params = new URLSearchParams({
             action: 'updateEvent',
             eventId: eventId,
-            eventData: compressedData
+            eventData: compressedJSON
         });
 
         const url = `${window.AppConfig.SCRIPT_URL}?${params.toString()}`;
 
-        // Check if URL is too long (Apps Script limit is ~2000 chars for GET)
-        if (url.length > 2000) {
-            console.warn(`URL length is ${url.length}, may exceed limit`);
+        console.log(`URL length: ${url.length} chars (original would be ~${JSON.stringify(eventData).length + 200} chars)`);
+
+        // Check if URL is still too long
+        if (url.length > 8000) {
+            throw new Error(`URL too long (${url.length} chars). Please reduce number of participants.`);
         }
 
         const response = await fetch(url);
