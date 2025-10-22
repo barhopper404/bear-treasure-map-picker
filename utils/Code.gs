@@ -6,6 +6,41 @@ const DISCORD_CLIENT_ID = '1428188591263191120';
 const DISCORD_CLIENT_SECRET = 'HVJ39mFwNIzxLZJfS8TyuR28Lm1EEnaq';
 const REDIRECT_URI = 'https://barhopper404.github.io/bear-treasure-map-picker/';
 
+// Handle POST requests for large data payloads
+function doPost(e) {
+  try {
+    const eventsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Events') ||
+                        SpreadsheetApp.getActiveSpreadsheet().insertSheet('Events');
+    const statsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Stats') ||
+                       SpreadsheetApp.getActiveSpreadsheet().insertSheet('Stats');
+    const pitTrialsStatsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('PitTrialsStats') ||
+                                SpreadsheetApp.getActiveSpreadsheet().insertSheet('PitTrialsStats');
+
+    // Parse JSON payload
+    const payload = JSON.parse(e.postData.contents);
+    const action = payload.action;
+
+    // Create event
+    if (action === 'createEvent') {
+      return createEventPost(payload, eventsSheet);
+    }
+
+    // Add participant
+    if (action === 'addParticipant') {
+      return addParticipantPost(payload, eventsSheet);
+    }
+
+    // Update event
+    if (action === 'updateEvent') {
+      return updateEventPost(payload, eventsSheet);
+    }
+
+    return createResponse({ success: false, error: 'Unknown action for POST request' });
+  } catch (error) {
+    return createResponse({ success: false, error: error.toString(), stack: error.stack });
+  }
+}
+
 function doGet(e) {
   try {
     const eventsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Events') ||
@@ -747,5 +782,69 @@ function cleanupStaleEvents(eventsSheet) {
     message: `Archived ${archivedCount} stale event(s)`,
     archivedCount: archivedCount
   });
+}
+
+// ============================================
+// POST REQUEST HANDLERS (for large payloads)
+// ============================================
+
+function createEventPost(payload, eventsSheet) {
+  const eventId = payload.eventId;
+  const marshall = payload.marshall;
+  const discordUser = payload.discordUser;
+  const participants = payload.participantData || [];
+  const eventType = payload.eventType || 'treasureMap';
+  const pitTrialTeamSize = payload.pitTrialTeamSize ? parseInt(payload.pitTrialTeamSize) : 5;
+
+  const eventData = {
+    id: eventId,
+    marshall: marshall,
+    marshallDiscord: discordUser,
+    participants: participants,
+    started: false,
+    eventType: eventType,
+    pitTrialSettings: eventType === 'pitTrial' ? {
+      teamSize: pitTrialTeamSize,
+      numTeams: 0
+    } : null,
+    timestamp: new Date().toISOString()
+  };
+
+  eventsSheet.appendRow([eventId, JSON.stringify(eventData)]);
+  return createResponse({ success: true, eventData: eventData });
+}
+
+function addParticipantPost(payload, eventsSheet) {
+  const eventId = payload.eventId;
+  const participant = payload.participantData;
+  const dataRange = eventsSheet.getDataRange();
+  const values = dataRange.getValues();
+
+  for (let i = 0; i < values.length; i++) {
+    if (values[i][0] === eventId) {
+      const eventData = JSON.parse(values[i][1]);
+      eventData.participants.push(participant);
+      eventsSheet.getRange(i + 1, 2).setValue(JSON.stringify(eventData));
+      return createResponse({ success: true, eventData: eventData });
+    }
+  }
+
+  return createResponse({ success: false, error: 'Event not found' });
+}
+
+function updateEventPost(payload, eventsSheet) {
+  const eventId = payload.eventId;
+  const updatedEventData = payload.eventData;
+  const dataRange = eventsSheet.getDataRange();
+  const values = dataRange.getValues();
+
+  for (let i = 0; i < values.length; i++) {
+    if (values[i][0] === eventId) {
+      eventsSheet.getRange(i + 1, 2).setValue(JSON.stringify(updatedEventData));
+      return createResponse({ success: true, eventData: updatedEventData });
+    }
+  }
+
+  return createResponse({ success: false, error: 'Event not found' });
 }
 

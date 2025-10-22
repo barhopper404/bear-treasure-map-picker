@@ -1,17 +1,22 @@
 // API functions for interacting with Google Sheets backend
 window.ApiUtils = {
     createEvent: async (eventId, characterName, discordUser, participant, eventType = 'treasureMap', pitTrialTeamSize = 5) => {
-        const params = new URLSearchParams({
-            action: 'createEvent',
-            eventId: eventId,
-            marshall: characterName,
-            discordUser: JSON.stringify(discordUser),
-            participantData: JSON.stringify([participant]),
-            eventType: eventType,
-            pitTrialTeamSize: pitTrialTeamSize.toString()
+        // Use POST to avoid URL length limits with large payloads
+        const response = await fetch(window.AppConfig.SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'createEvent',
+                eventId: eventId,
+                marshall: characterName,
+                discordUser: discordUser,
+                participantData: [participant],
+                eventType: eventType,
+                pitTrialTeamSize: pitTrialTeamSize
+            })
         });
-
-        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
 
@@ -21,24 +26,34 @@ window.ApiUtils = {
     },
 
     addParticipant: async (eventId, participant) => {
-        const params = new URLSearchParams({
-            action: 'addParticipant',
-            eventId: eventId,
-            participantData: JSON.stringify(participant)
+        // Use POST to avoid URL length limits with large payloads
+        const response = await fetch(window.AppConfig.SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'addParticipant',
+                eventId: eventId,
+                participantData: participant
+            })
         });
-        
-        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
 
     updateEvent: async (eventId, eventData) => {
-        const params = new URLSearchParams({
-            action: 'updateEvent',
-            eventId: eventId,
-            eventData: JSON.stringify(eventData)
+        // Use POST to avoid URL length limits with large payloads
+        const response = await fetch(window.AppConfig.SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'updateEvent',
+                eventId: eventId,
+                eventData: eventData
+            })
         });
-
-        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
 
