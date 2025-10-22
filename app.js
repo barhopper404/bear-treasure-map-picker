@@ -711,11 +711,39 @@ function TreasureMapTeamPicker() {
         }
     }, [view, pickingCaptain, availablePlayers, isAutoPicking, captains, teams.captain1.length, teams.captain2.length]);
 
+    // Sound effect utility
+    const playDraftSound = () => {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Draft sound: ascending tone
+            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+        } catch (e) {
+            console.log('Audio not supported');
+        }
+    };
+
     // Pick player handler
     const handlePickPlayer = async (player) => {
         if (isDrafting) return;
 
         setIsDrafting(true);
+
+        // Play draft sound
+        playDraftSound();
 
         const isPitTrial = eventData.eventType === 'pitTrial';
         const currentNumTeams = numTeams || 2;
@@ -822,8 +850,11 @@ function TreasureMapTeamPicker() {
     // Pick map handler
     const handlePickMap = async (map) => {
         if (isPickingMap) return; // Prevent spam clicking
-        
+
         setIsPickingMap(true);
+
+        // Play draft sound for map selection
+        playDraftSound();
         
         const teamKey = currentMapPicker === 0 ? 'captain1' : 'captain2';
         
@@ -1039,9 +1070,123 @@ const handleRecordWinner = async (winningTeam) => {
             if (result.success) {
                 setEventData(result.eventData);
                 setEditingPlayer(null);
+            } else {
+                setError('Failed to update player roles: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error updating player roles: ' + err.message);
+            console.error('Update player roles error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Update all captain status
+    const handleUpdateAllCaptainStatus = async (updatedParticipants) => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const updatedEventData = {
+                ...eventData,
+                participants: updatedParticipants
+            };
+
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            if (result.success) {
+                setEventData(result.eventData);
                 setTempRoles({});
             } else {
                 setError('Failed to update player: ' + result.error);
+            }
+        } catch (err) {
+            setError('Error updating captain status: ' + err.message);
+            console.error('Update captain status error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Randomize full teams
+    const handleRandomizeTeams = async () => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const currentEventType = eventData.eventType || 'treasureMap';
+            const isPitTrial = currentEventType === 'pitTrial';
+            const teamSize = isPitTrial ? (eventData.pitTrialSettings?.teamSize || 5) : null;
+
+            // Validate minimum players
+            const minPlayers = isPitTrial ? (teamSize * 2) : 5;
+            if (eventData.participants.length < minPlayers) {
+                setError(`Need at least ${minPlayers} players for ${isPitTrial ? 'Pit Trials' : 'Treasure Maps'}`);
+                setLoading(false);
+                return;
+            }
+
+            // Calculate number of teams
+            const calculatedNumTeams = isPitTrial
+                ? Math.floor(eventData.participants.length / teamSize)
+                : 2;
+
+            // Shuffle all participants
+            const shuffledParticipants = [...eventData.participants].sort(() => Math.random() - 0.5);
+
+            // Select captains from shuffled list
+            const selectedCaptains = shuffledParticipants.slice(0, calculatedNumTeams);
+            const remainingPlayers = shuffledParticipants.slice(calculatedNumTeams);
+
+            // Build teams object
+            const teamsObj = {};
+            for (let i = 0; i < calculatedNumTeams; i++) {
+                const teamKey = isPitTrial ? `team${i + 1}` : `captain${i + 1}`;
+                teamsObj[teamKey] = [];
+            }
+
+            // Distribute remaining players round-robin
+            remainingPlayers.forEach((player, index) => {
+                const teamIndex = index % calculatedNumTeams;
+                const teamKey = isPitTrial ? `team${teamIndex + 1}` : `captain${teamIndex + 1}`;
+
+                // For pit trials, stop if we've reached capacity
+                if (isPitTrial) {
+                    const totalAssigned = Object.values(teamsObj).reduce((sum, team) => sum + team.length, 0) + calculatedNumTeams;
+                    const maxPlayers = teamSize * calculatedNumTeams;
+                    if (totalAssigned < maxPlayers) {
+                        teamsObj[teamKey].push(player);
+                    }
+                } else {
+                    teamsObj[teamKey].push(player);
+                }
+            });
+
+            // Set state and update event data
+            setCaptains(selectedCaptains);
+            setTeams(teamsObj);
+            setAvailablePlayers(isPitTrial ? shuffledParticipants.slice(calculatedNumTeams * teamSize) : []);
+            setNumTeams(calculatedNumTeams);
+
+            const updatedEventData = {
+                ...eventData,
+                started: true,
+                captains: selectedCaptains,
+                teams: teamsObj,
+                availablePlayers: isPitTrial ? shuffledParticipants.slice(calculatedNumTeams * teamSize) : [],
+                numTeams: calculatedNumTeams,
+                pickingCaptain: 0,
+                completed: false
+            };
+
+            const result = await window.ApiUtils.updateEvent(eventId, updatedEventData);
+
+            if (result.success) {
+                setEventData(result.eventData);
+                // Skip directly to complete view for randomized teams
+                setView('complete');
+            } else {
+                setError('Failed to randomize teams: ' + result.error);
             }
         } catch (err) {
             setError('Error updating player: ' + err.message);
@@ -1503,6 +1648,8 @@ const handleRecordWinner = async (winningTeam) => {
                 setEventType={setEventType}
                 pitTrialTeamSize={pitTrialTeamSize}
                 setPitTrialTeamSize={setPitTrialTeamSize}
+                onUpdateAllCaptainStatus={handleUpdateAllCaptainStatus}
+                onRandomizeTeams={handleRandomizeTeams}
             />
         );
     }

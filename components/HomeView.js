@@ -5,11 +5,14 @@ window.HomeView = ({ characterName, discordUser, error, setView, setEventId, the
     const [liveEvents, setLiveEvents] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
 
-    // Fetch both leaderboards and live events on mount
+    // Fetch both leaderboards and live events on mount and every 5 seconds
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                setLoading(true);
+                // Only show loading on initial fetch
+                if (treasureMapLeaderboard.length === 0 && pitTrialsLeaderboard.length === 0 && liveEvents.length === 0) {
+                    setLoading(true);
+                }
 
                 // Fetch treasure map leaderboard
                 const tmLeaderboardResult = await window.ApiUtils.getLeaderboard();
@@ -35,7 +38,14 @@ window.HomeView = ({ characterName, discordUser, error, setView, setEventId, the
             }
         };
 
+        // Initial fetch
         fetchData();
+
+        // Set up interval to refresh every 5 seconds
+        const interval = setInterval(fetchData, 5000);
+
+        // Cleanup interval on unmount
+        return () => clearInterval(interval);
     }, []);
     
     return (
