@@ -6,6 +6,16 @@ const DISCORD_CLIENT_ID = '1428188591263191120';
 const DISCORD_CLIENT_SECRET = 'HVJ39mFwNIzxLZJfS8TyuR28Lm1EEnaq';
 const REDIRECT_URI = 'https://barhopper404.github.io/bear-treasure-map-picker/';
 
+// Handle OPTIONS requests for CORS preflight
+function doOptions(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Max-Age', '86400');
+}
+
 // Handle POST requests for large data payloads
 function doPost(e) {
   try {
@@ -573,7 +583,10 @@ function updatePlayerStats(statsSheet, discordUser, result) {
 
 function createResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 // ============================================
