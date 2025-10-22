@@ -606,12 +606,26 @@ window.LobbyView = ({
                     {/* Marshall-only controls */}
                     {isMarshall && !eventData?.started && (
                         <>
+                            {/* Add Player Manually Button */}
+                            <div className="mb-4">
+                                <button
+                                    onClick={() => setShowAddPlayer(true)}
+                                    className={`w-full ${theme.btnSuccess} ${theme.btnSuccessText} font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2`}
+                                >
+                                    <Users className="w-5 h-5" />
+                                    Add Player Manually
+                                </button>
+                            </div>
+
                             {/* Set All as Captain Checkbox */}
                             <div className={`mb-4 ${theme.darkOverlayBg} p-4 rounded border ${theme.borderPrimary}`}>
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        checked={eventData?.participants?.every(p => p.wantsCaptain) || false}
+                                        checked={
+                                            eventData?.participants?.length > 0 &&
+                                            eventData.participants.every(p => p.wantsCaptain === true)
+                                        }
                                         onChange={(e) => {
                                             const allAsCaptain = e.target.checked;
                                             const updatedParticipants = eventData.participants.map(p => ({
@@ -649,17 +663,6 @@ window.LobbyView = ({
                                 <p className={`${theme.textMuted} text-sm mt-2 ml-8`}>
                                     When enabled, teams will be randomly created when event starts
                                 </p>
-                            </div>
-
-                            {/* Add Player Manually Button */}
-                            <div className="mb-6">
-                                <button
-                                    onClick={() => setShowAddPlayer(true)}
-                                    className={`w-full ${theme.btnSuccess} ${theme.btnSuccessText} font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2`}
-                                >
-                                    <Users className="w-5 h-5" />
-                                    Add Player Manually
-                                </button>
                             </div>
                         </>
                     )}
