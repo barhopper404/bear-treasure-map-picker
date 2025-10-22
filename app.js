@@ -73,6 +73,11 @@ function TreasureMapTeamPicker() {
     const [isDarkMode, setIsDarkMode] = useState(window.ThemeUtils.getStoredTheme());
     const theme = window.ThemeUtils.getTheme(isDarkMode);
 
+    // Pit Trials state
+    const [eventType, setEventType] = useState('treasureMap'); // 'treasureMap' or 'pitTrial'
+    const [pitTrialTeamSize, setPitTrialTeamSize] = useState(5); // 3 or 5
+    const [numTeams, setNumTeams] = useState(2); // Calculated based on participants
+
     // Toggle theme
     const toggleTheme = () => {
         const newMode = !isDarkMode;
@@ -238,18 +243,20 @@ function TreasureMapTeamPicker() {
             lockpicker: isLockpicker,
             healer: isHealer,
             bard: isBard,
-            meleeDPS: isMeleeDPS,        // ADD
-            rangedDPS: isRangedDPS,      // ADD
-            tamer: isTamer,              // ADD
-            summoner: isSummoner,        // ADD
-            tank: isTank,                // ADD
+            meleeDPS: isMeleeDPS,
+            rangedDPS: isRangedDPS,
+            tamer: isTamer,
+            summoner: isSummoner,
+            tank: isTank,
             jester: isJester,
             isMarshall: true,
-            isAdmin: isAdmin
+            isAdmin: isAdmin,
+            isManual: false,
+            isAnonymous: false
         };
 
         try {
-            const result = await window.ApiUtils.createEvent(newEventId, characterName, discordUser, participant);
+            const result = await window.ApiUtils.createEvent(newEventId, characterName, discordUser, participant, eventType, pitTrialTeamSize);
             
             if (result.success) {
                 setEventId(newEventId);
@@ -415,40 +422,66 @@ function TreasureMapTeamPicker() {
 
     // Start event and select captains
     const handleStartEvent = async () => {
-        if (eventData.participants.length < 5) {
-            alert('Need at least 5 participants to start the event!');
+        const currentEventType = eventData.eventType || 'treasureMap';
+        const isPitTrial = currentEventType === 'pitTrial';
+        const teamSize = isPitTrial ? (eventData.pitTrialSettings?.teamSize || 5) : null;
+
+        // Validate minimum players
+        const minPlayers = isPitTrial ? (teamSize * 2) : 5;
+        if (eventData.participants.length < minPlayers) {
+            alert(`Need at least ${minPlayers} participants to start ${isPitTrial ? 'pit trials' : 'the event'}!`);
             return;
         }
 
+        // Calculate number of teams for pit trials
+        const calculatedNumTeams = isPitTrial ? Math.floor(eventData.participants.length / teamSize) : 2;
+
         const potentialCaptains = eventData.participants.filter(p => p.wantsCaptain);
 
-        if (potentialCaptains.length < 2) {
-            alert('Need at least 2 people willing to be captain!');
+        if (potentialCaptains.length < calculatedNumTeams) {
+            alert(`Need at least ${calculatedNumTeams} people willing to be captain!`);
             return;
         }
 
         setLoading(true);
 
-        // Randomly select both captains instantly
-        const captain1 = spinWheel(potentialCaptains);
-        const remainingCaptains = potentialCaptains.filter(p => p.name !== captain1.name);
-        const captain2 = spinWheel(remainingCaptains);
+        // Select N captains
+        const selectedCaptains = [];
+        let remainingCaptainPool = [...potentialCaptains];
+
+        for (let i = 0; i < calculatedNumTeams; i++) {
+            const captain = spinWheel(remainingCaptainPool);
+            selectedCaptains.push(captain);
+            remainingCaptainPool = remainingCaptainPool.filter(p => p.name !== captain.name);
+        }
 
         const firstPicker = Math.random() < 0.5 ? 0 : 1;
 
-        const selectedCaptains = [captain1, captain2];
+        // Get all non-captains
+        const captainNames = selectedCaptains.map(c => c.name);
         const nonCaptains = eventData.participants.filter(
-            p => p.name !== captain1.name && p.name !== captain2.name
+            p => !captainNames.includes(p.name)
         );
+
+        // Build teams object dynamically
+        const teamsObj = {};
+        for (let i = 0; i < calculatedNumTeams; i++) {
+            if (isPitTrial) {
+                teamsObj[`team${i + 1}`] = [];
+            } else {
+                // Treasure maps use captain1/captain2
+                teamsObj[`captain${i + 1}`] = [];
+            }
+        }
 
         const updatedEventData = {
             ...eventData,
             started: true,
             captains: selectedCaptains,
-            firstPicker: firstPicker,
-            currentPicker: firstPicker,
+            firstPicker: isPitTrial ? 0 : firstPicker,
+            currentPicker: isPitTrial ? 0 : firstPicker,
             availablePlayers: nonCaptains,
-            teams: { captain1: [], captain2: [] },
+            teams: teamsObj,
             deferredFirstPick: false,
             wheelSpinning: false,
             wheelSpinPhase: null,
@@ -456,14 +489,28 @@ function TreasureMapTeamPicker() {
             wheelWinner: null
         };
 
+        // Update pit trial settings with calculated teams
+        if (isPitTrial) {
+            updatedEventData.pitTrialSettings.numTeams = calculatedNumTeams;
+        }
+
         try {
             await window.ApiUtils.updateEvent(eventId, updatedEventData);
 
             setCaptains(selectedCaptains);
-            setPickingCaptain(firstPicker);
+            setPickingCaptain(isPitTrial ? 0 : firstPicker);
             setAvailablePlayers(nonCaptains);
-            setTeams({ captain1: [], captain2: [] });
-            setView('captainReveal');
+            setTeams(teamsObj);
+            setNumTeams(calculatedNumTeams);
+
+            // Pit trials skip captain choice and go straight to team picking
+            if (isPitTrial) {
+                setView('captainReveal');
+                // Auto-advance to team picking after reveal
+                setTimeout(() => setView('teamPicking'), 5000);
+            } else {
+                setView('captainReveal');
+            }
         } catch (err) {
             setError('Error starting event: ' + err.message);
             setLoading(false);
@@ -667,71 +714,108 @@ function TreasureMapTeamPicker() {
     // Pick player handler
     const handlePickPlayer = async (player) => {
         if (isDrafting) return;
-        
+
         setIsDrafting(true);
-        
-        const teamKey = pickingCaptain === 0 ? 'captain1' : 'captain2';
-        
+
+        const isPitTrial = eventData.eventType === 'pitTrial';
+        const currentNumTeams = numTeams || 2;
+        const teamSize = isPitTrial ? (eventData.pitTrialSettings?.teamSize || 5) : null;
+
+        // Determine team key based on event type
+        const teamKey = isPitTrial ? `team${pickingCaptain + 1}` : `captain${pickingCaptain + 1}`;
+
         const newTeams = {
             ...teams,
             [teamKey]: [...teams[teamKey], player]
         };
-        
+
         const newAvailablePlayers = availablePlayers.filter(p => p.name !== player.name);
-        
+
         setTeams(newTeams);
         setAvailablePlayers(newAvailablePlayers);
         setDraftTimer(draftTimerSetting);
         setJustDrafted(player.name);
         setTimeout(() => setJustDrafted(null), 2000);
-        
+
+        // Round-robin: cycle through all teams
+        const nextPicker = (pickingCaptain + 1) % currentNumTeams;
+
         const updatedEventData = {
             ...eventData,
             teams: newTeams,
             availablePlayers: newAvailablePlayers,
-            currentPicker: pickingCaptain === 0 ? 1 : 0,
+            currentPicker: nextPicker,
             teamNames: teamNames
         };
 
         try {
             await window.ApiUtils.updateEvent(eventId, updatedEventData);
             setEventData(updatedEventData);
+            setPickingCaptain(nextPicker);
         } catch (err) {
             console.error('Error updating teams:', err);
         }
-        
+
         setTimeout(() => {
             setIsDrafting(false);
         }, 500);
-        
-        if (newAvailablePlayers.length === 1) {
-            const otherTeamKey = pickingCaptain === 0 ? 'captain2' : 'captain1';
-            const finalTeams = {
-                ...newTeams,
-                [otherTeamKey]: [...newTeams[otherTeamKey], newAvailablePlayers[0]]
-            };
-            
-            setTeams(finalTeams);
-            setAvailablePlayers([]);
-            
-            const finalEventData = {
-                ...eventData,
-                teams: finalTeams,
-                availablePlayers: [],
-                completed: true,
-                teamNames: teamNames
-            };
 
-            try {
-                await window.ApiUtils.updateEvent(eventId, finalEventData);
-                setEventData(finalEventData);
-            } catch (err) {
-                console.error('Error finalizing teams:', err);
+        // Check if we need to finish drafting
+        if (isPitTrial) {
+            // For pit trials: check if we've filled teams to capacity or run out of players
+            // Leave leftover players undrafted
+            const totalDrafted = Object.values(newTeams).reduce((sum, team) => sum + team.length, 0) + captains.length;
+            const maxPlayers = teamSize * currentNumTeams;
+            const shouldComplete = newAvailablePlayers.length === 0 || totalDrafted >= maxPlayers;
+
+            if (shouldComplete) {
+                const finalEventData = {
+                    ...eventData,
+                    teams: newTeams,
+                    availablePlayers: newAvailablePlayers,
+                    completed: false, // Pit trials complete after winner selection
+                    teamNames: teamNames
+                };
+
+                try {
+                    await window.ApiUtils.updateEvent(eventId, finalEventData);
+                    setEventData(finalEventData);
+                    setAvailablePlayers(newAvailablePlayers);
+                    // Go straight to complete view for pit trials
+                    setTimeout(() => setView('complete'), 1000);
+                } catch (err) {
+                    console.error('Error completing pit trial draft:', err);
+                }
             }
-            
-            setView('complete');
         } else {
-            setPickingCaptain(prev => prev === 0 ? 1 : 0);
+            // Treasure maps: auto-assign last player
+            if (newAvailablePlayers.length === 1) {
+                const lastPlayerTeamKey = `captain${nextPicker + 1}`;
+                const finalTeams = {
+                    ...newTeams,
+                    [lastPlayerTeamKey]: [...newTeams[lastPlayerTeamKey], newAvailablePlayers[0]]
+                };
+
+                setTeams(finalTeams);
+                setAvailablePlayers([]);
+
+                const finalEventData = {
+                    ...eventData,
+                    teams: finalTeams,
+                    availablePlayers: [],
+                    completed: true,
+                    teamNames: teamNames
+                };
+
+                try {
+                    await window.ApiUtils.updateEvent(eventId, finalEventData);
+                    setEventData(finalEventData);
+                } catch (err) {
+                    console.error('Error finalizing teams:', err);
+                }
+
+                setView('complete');
+            }
         }
     };
 
@@ -1415,6 +1499,10 @@ const handleRecordWinner = async (winningTeam) => {
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
                 onBannerClick={handleBannerClick}
+                eventType={eventType}
+                setEventType={setEventType}
+                pitTrialTeamSize={pitTrialTeamSize}
+                setPitTrialTeamSize={setPitTrialTeamSize}
             />
         );
     }
@@ -1430,6 +1518,8 @@ const handleRecordWinner = async (winningTeam) => {
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
                 onBannerClick={handleBannerClick}
+                eventType={eventType}
+                numTeams={numTeams}
             />
         );
     }
@@ -1479,6 +1569,8 @@ const handleRecordWinner = async (winningTeam) => {
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
                 onBannerClick={handleBannerClick}
+                eventType={eventType}
+                numTeams={numTeams}
             />
         );
     }
@@ -1523,6 +1615,8 @@ const handleRecordWinner = async (winningTeam) => {
                 isDarkMode={isDarkMode}
                 onToggleTheme={toggleTheme}
                 onBannerClick={handleBannerClick}
+                eventType={eventType}
+                numTeams={numTeams}
             />
         );
     }

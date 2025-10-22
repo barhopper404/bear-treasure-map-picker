@@ -1,14 +1,16 @@
 // API functions for interacting with Google Sheets backend
 window.ApiUtils = {
-    createEvent: async (eventId, characterName, discordUser, participant) => {
+    createEvent: async (eventId, characterName, discordUser, participant, eventType = 'treasureMap', pitTrialTeamSize = 5) => {
         const params = new URLSearchParams({
             action: 'createEvent',
             eventId: eventId,
             marshall: characterName,
             discordUser: JSON.stringify(discordUser),
-            participantData: JSON.stringify([participant])
+            participantData: JSON.stringify([participant]),
+            eventType: eventType,
+            pitTrialTeamSize: pitTrialTeamSize.toString()
         });
-        
+
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
@@ -51,15 +53,11 @@ window.ApiUtils = {
         return await response.json();
     },
 
-    // ============================================
-    // ADD TO utils/api.js (after recordWinner)
-    // ============================================
-
     getLeaderboard: async () => {
         const params = new URLSearchParams({
             action: 'getLeaderboard'
         });
-        
+
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
@@ -68,7 +66,7 @@ window.ApiUtils = {
         const params = new URLSearchParams({
             action: 'getLiveEvents'
         });
-        
+
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
         return await response.json();
     },
@@ -77,24 +75,6 @@ window.ApiUtils = {
         const params = new URLSearchParams({
             action: 'exchangeCode',
             code: code
-        });
-        
-        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
-        return await response.json();
-    },
-
-    getLeaderboard: async () => {
-        const params = new URLSearchParams({
-            action: 'getLeaderboard'
-        });
-        
-        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
-        return await response.json();
-    },
-
-    getLiveEvents: async () => {
-        const params = new URLSearchParams({
-            action: 'getLiveEvents'
         });
 
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
@@ -144,6 +124,27 @@ window.ApiUtils = {
     cleanupStaleEvents: async () => {
         const params = new URLSearchParams({
             action: 'cleanupStaleEvents'
+        });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    // Pit Trials endpoints
+    getPitTrialsLeaderboard: async () => {
+        const params = new URLSearchParams({
+            action: 'getPitTrialsLeaderboard'
+        });
+
+        const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);
+        return await response.json();
+    },
+
+    recordPitTrialWinner: async (eventId, winningTeam) => {
+        const params = new URLSearchParams({
+            action: 'recordPitTrialWinner',
+            eventId: eventId,
+            winningTeam: winningTeam
         });
 
         const response = await fetch(`${window.AppConfig.SCRIPT_URL}?${params.toString()}`);

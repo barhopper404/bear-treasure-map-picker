@@ -62,7 +62,11 @@ window.LobbyView = ({
     theme,
     isDarkMode,
     onToggleTheme,
-    onBannerClick
+    onBannerClick,
+    eventType,
+    setEventType,
+    pitTrialTeamSize,
+    setPitTrialTeamSize
 }) => {
     const { Users, Shield, Key, Heart, Music, Copy, Check, Edit, Trash, Sword, Target, Zap, Skull, User, RefreshCw, X, UserCheck, XCircle } = window.Icons;
 
@@ -287,6 +291,66 @@ window.LobbyView = ({
                     <div className="flex justify-between items-center mb-6">
                         <h2 className={`text-3xl font-bold ${theme.headingPrimary}`}>Event Lobby</h2>
                         <div className="flex items-center gap-4">
+                            {/* Event Type Toggle */}
+                            <div className="flex flex-col gap-2">
+                                <div className={`flex rounded-lg overflow-hidden border-2 ${theme.borderPrimary}`}>
+                                    <button
+                                        onClick={() => isMarshall && setEventType('treasureMap')}
+                                        disabled={!isMarshall || eventData?.started}
+                                        className={`px-4 py-2 font-bold text-sm transition-colors ${
+                                            eventType === 'treasureMap'
+                                                ? `${theme.btnSuccess} ${theme.btnSuccessText}`
+                                                : `${theme.overlayBg} ${theme.textMuted} hover:${theme.textSecondary}`
+                                        } ${(!isMarshall || eventData?.started) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                        title={!isMarshall ? 'Marshall only' : eventData?.started ? 'Event locked' : 'Switch to Treasure Maps'}
+                                    >
+                                        🗺️ Treasure Maps
+                                    </button>
+                                    <button
+                                        onClick={() => isMarshall && setEventType('pitTrial')}
+                                        disabled={!isMarshall || eventData?.started}
+                                        className={`px-4 py-2 font-bold text-sm transition-colors ${
+                                            eventType === 'pitTrial'
+                                                ? `bg-purple-600 hover:bg-purple-700 text-white`
+                                                : `${theme.overlayBg} ${theme.textMuted} hover:${theme.textSecondary}`
+                                        } ${(!isMarshall || eventData?.started) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                        title={!isMarshall ? 'Marshall only' : eventData?.started ? 'Event locked' : 'Switch to Pit Trials'}
+                                    >
+                                        ⚔️ Pit Trials
+                                    </button>
+                                </div>
+
+                                {/* Team Size Toggle - Only visible for Pit Trials */}
+                                {eventType === 'pitTrial' && (
+                                    <div className={`flex rounded-lg overflow-hidden border-2 border-purple-500`}>
+                                        <button
+                                            onClick={() => isMarshall && setPitTrialTeamSize(3)}
+                                            disabled={!isMarshall || eventData?.started}
+                                            className={`px-4 py-2 font-bold text-sm transition-colors ${
+                                                pitTrialTeamSize === 3
+                                                    ? `bg-purple-600 hover:bg-purple-700 text-white`
+                                                    : `${theme.overlayBg} ${theme.textMuted} hover:${theme.textSecondary}`
+                                            } ${(!isMarshall || eventData?.started) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                            title={!isMarshall ? 'Marshall only' : eventData?.started ? 'Event locked' : '3 players per team'}
+                                        >
+                                            3 Players
+                                        </button>
+                                        <button
+                                            onClick={() => isMarshall && setPitTrialTeamSize(5)}
+                                            disabled={!isMarshall || eventData?.started}
+                                            className={`px-4 py-2 font-bold text-sm transition-colors ${
+                                                pitTrialTeamSize === 5
+                                                    ? `bg-purple-600 hover:bg-purple-700 text-white`
+                                                    : `${theme.overlayBg} ${theme.textMuted} hover:${theme.textSecondary}`
+                                            } ${(!isMarshall || eventData?.started) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                            title={!isMarshall ? 'Marshall only' : eventData?.started ? 'Event locked' : '5 players per team'}
+                                        >
+                                            5 Players
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="text-right">
                                 <div className={`${theme.textSecondary} text-sm`}>Event ID</div>
                                 <div className={`text-2xl font-bold ${theme.textPrimary}`}>{eventId}</div>
@@ -751,8 +815,9 @@ window.LobbyView = ({
                                 </div>
                             </div>
 
-                            <div className={`mb-6 ${theme.darkOverlayBg} p-4 rounded border ${theme.borderSuccess}`}>
-                                <h3 className="text-lg text-green-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
+                            {eventType === 'treasureMap' && (
+                                <div className={`mb-6 ${theme.darkOverlayBg} p-4 rounded border ${theme.borderSuccess}`}>
+                                    <h3 className="text-lg text-green-300 mb-3 font-bold">🗺️ Treasure Map Settings</h3>
                                 <div className="space-y-4">
                                     <div>
                                         <label className={`block ${theme.textPrimary} text-sm mb-2`}>
@@ -803,7 +868,8 @@ window.LobbyView = ({
                                         </p>
                                     </div>
                                 </div>
-                            </div>
+                                </div>
+                            )}
                         </>
                     )}
 

@@ -8,16 +8,28 @@ const REDIRECT_URI = 'https://barhopper404.github.io/bear-treasure-map-picker/';
 
 function doGet(e) {
   try {
-    const eventsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Events') || 
+    const eventsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Events') ||
                         SpreadsheetApp.getActiveSpreadsheet().insertSheet('Events');
-    const statsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Stats') || 
+    const statsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Stats') ||
                        SpreadsheetApp.getActiveSpreadsheet().insertSheet('Stats');
-    
+    const pitTrialsStatsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('PitTrialsStats') ||
+                                SpreadsheetApp.getActiveSpreadsheet().insertSheet('PitTrialsStats');
+
     const action = e.parameter.action;
-    
+
     // Get leaderboard - top 10 players by wins
     if (action === 'getLeaderboard') {
       return getLeaderboard(statsSheet);
+    }
+
+    // Get Pit Trials leaderboard
+    if (action === 'getPitTrialsLeaderboard') {
+      return getPitTrialsLeaderboard(pitTrialsStatsSheet);
+    }
+
+    // Record Pit Trial winner
+    if (action === 'recordPitTrialWinner') {
+      return recordPitTrialWinner(e, eventsSheet, pitTrialsStatsSheet);
     }
 
     // ============================================
@@ -233,6 +245,141 @@ function recordWinner(e, eventsSheet, statsSheet) {
   return createResponse({ success: true, eventData: eventData });
 }
 
+// Pit Trials Leaderboard
+function getPitTrialsLeaderboard(pitTrialsStatsSheet) {
+  const dataRange = pitTrialsStatsSheet.getDataRange();
+  const values = dataRange.getValues();
+
+  if (values.length <= 1) {
+    return createResponse({ success: true, leaderboard: [] });
+  }
+
+  const players = [];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0]) {
+      players.push({
+        discordId: values[i][0],
+        username: values[i][1],
+        wins: values[i][2] || 0,
+        losses: values[i][3] || 0,
+        trialsCompleted: values[i][4] || 0
+      });
+    }
+  }
+
+  players.sort(function(a, b) { return b.wins - a.wins; });
+  const top10 = players.slice(0, 10);
+
+  return createResponse({ success: true, leaderboard: top10 });
+}
+
+// Record Pit Trial Winner
+function recordPitTrialWinner(e, eventsSheet, pitTrialsStatsSheet) {
+  const eventId = e.parameter.eventId;
+  const winningTeam = e.parameter.winningTeam; // 'team1', 'team2', 'team3', etc.
+
+  const eventRange = eventsSheet.getDataRange();
+  const eventValues = eventRange.getValues();
+
+  let eventData = null;
+  let eventRowIndex = -1;
+
+  for (let i = 0; i < eventValues.length; i++) {
+    if (eventValues[i][0] === eventId) {
+      eventData = JSON.parse(eventValues[i][1]);
+      eventRowIndex = i;
+      break;
+    }
+  }
+
+  if (!eventData) {
+    return createResponse({ success: false, error: 'Event not found' });
+  }
+
+  eventData.completed = true;
+  eventData.winner = winningTeam;
+  eventData.completedAt = new Date().toISOString();
+
+  eventsSheet.getRange(eventRowIndex + 1, 2).setValue(JSON.stringify(eventData));
+
+  const statsRange = pitTrialsStatsSheet.getDataRange();
+  const statsValues = statsRange.getValues();
+
+  if (statsValues.length === 0 || !statsValues[0][0]) {
+    pitTrialsStatsSheet.appendRow(['Discord ID', 'Username', 'Wins', 'Losses', 'Trials Completed']);
+  }
+
+  // Find winning captain by matching team name
+  const teamIndex = parseInt(winningTeam.replace('team', '')) - 1;
+  const winningCaptain = eventData.captains[teamIndex];
+
+  // Get winning team members
+  const winningTeamMembers = [winningCaptain];
+  if (eventData.teams && eventData.teams[winningTeam]) {
+    winningTeamMembers.push.apply(winningTeamMembers, eventData.teams[winningTeam]);
+  }
+
+  // Get all losing team members
+  const losingTeamMembers = [];
+  for (let i = 0; i < eventData.captains.length; i++) {
+    const teamKey = 'team' + (i + 1);
+    if (teamKey !== winningTeam) {
+      losingTeamMembers.push(eventData.captains[i]);
+      if (eventData.teams && eventData.teams[teamKey]) {
+        losingTeamMembers.push.apply(losingTeamMembers, eventData.teams[teamKey]);
+      }
+    }
+  }
+
+  // Update stats for winners
+  for (let i = 0; i < winningTeamMembers.length; i++) {
+    if (winningTeamMembers[i] && winningTeamMembers[i].discordUser && !winningTeamMembers[i].isAnonymous && !winningTeamMembers[i].discordUser.isAnonymous) {
+      updatePitTrialsPlayerStats(pitTrialsStatsSheet, winningTeamMembers[i].discordUser, 'win');
+    }
+  }
+
+  // Update stats for losers
+  for (let i = 0; i < losingTeamMembers.length; i++) {
+    if (losingTeamMembers[i] && losingTeamMembers[i].discordUser && !losingTeamMembers[i].isAnonymous && !losingTeamMembers[i].discordUser.isAnonymous) {
+      updatePitTrialsPlayerStats(pitTrialsStatsSheet, losingTeamMembers[i].discordUser, 'loss');
+    }
+  }
+
+  return createResponse({ success: true, eventData: eventData });
+}
+
+// Update Pit Trials player stats
+function updatePitTrialsPlayerStats(pitTrialsStatsSheet, discordUser, result) {
+  const dataRange = pitTrialsStatsSheet.getDataRange();
+  const values = dataRange.getValues();
+
+  let playerRow = -1;
+  for (let i = 1; i < values.length; i++) {
+    if (values[i][0] === discordUser.id) {
+      playerRow = i;
+      break;
+    }
+  }
+
+  if (playerRow === -1) {
+    const wins = result === 'win' ? 1 : 0;
+    const losses = result === 'loss' ? 1 : 0;
+    pitTrialsStatsSheet.appendRow([discordUser.id, discordUser.username, wins, losses, 1]);
+  } else {
+    const wins = (values[playerRow][2] || 0) + (result === 'win' ? 1 : 0);
+    const losses = (values[playerRow][3] || 0) + (result === 'loss' ? 1 : 0);
+    const trialsCompleted = (values[playerRow][4] || 0) + 1;
+
+    pitTrialsStatsSheet.getRange(playerRow + 1, 1, 1, 5).setValues([[
+      discordUser.id,
+      discordUser.username,
+      wins,
+      losses,
+      trialsCompleted
+    ]]);
+  }
+}
+
 function exchangeDiscordCode(code) {
   const tokenResponse = UrlFetchApp.fetch('https://discord.com/api/oauth2/token', {
     method: 'post',
@@ -279,16 +426,23 @@ function createEvent(e, eventsSheet) {
   const marshall = e.parameter.marshall;
   const discordUser = JSON.parse(e.parameter.discordUser);
   const participants = JSON.parse(e.parameter.participantData || '[]');
-  
+  const eventType = e.parameter.eventType || 'treasureMap'; // 'treasureMap' or 'pitTrial'
+  const pitTrialTeamSize = e.parameter.pitTrialTeamSize ? parseInt(e.parameter.pitTrialTeamSize) : 5;
+
   const eventData = {
     id: eventId,
     marshall: marshall,
     marshallDiscord: discordUser,
     participants: participants,
     started: false,
+    eventType: eventType,
+    pitTrialSettings: eventType === 'pitTrial' ? {
+      teamSize: pitTrialTeamSize,
+      numTeams: 0 // Will be calculated when event starts
+    } : null,
     timestamp: new Date().toISOString()
   };
-  
+
   eventsSheet.appendRow([eventId, JSON.stringify(eventData)]);
   return createResponse({ success: true, eventData: eventData });
 }
